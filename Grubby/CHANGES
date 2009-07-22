@@ -1,0 +1,22 @@
+
+FILTERS
+
+Removed multiple primary key reads.  Example: $table->read(array(1, 42, 420));
+
+OTHER MODIFIERS
+
+Added filter expression. Example: $table->filterExpression('age < ? OR age > ?', array(13, 65));
+Added slice.
+
+DATABASES
+
+Added GrubbyDB, so now there are GrubbyMDB2 and GrubbyDB
+
+DEBUGGING
+
+Added debug mode for outputting sql and sql execution times.  Grubby::$debug = true;
+
+TESTS
+
+Moved phpunit tests to a parallel test directory.
+Reorganize test suite for multiple databases
