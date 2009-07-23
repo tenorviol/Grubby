@@ -2,7 +2,7 @@
 /**
  * Grubby : Quick and dirty CRUD operations
  * 
- * Version 0.1
+ * Version --version--
  * Copyright (c) 2009 Christopher Johnson
  */
 

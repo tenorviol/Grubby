@@ -2,7 +2,7 @@
 /**
  * GrubbyMDB2 : Grubby database using the MDB2 abstraction layer
  * 
- * Version 0.1
+ * Version --version--
  * Copyright (c) 2009 Christopher Johnson
  */
 

@@ -2,7 +2,7 @@
 /**
  * GrubbyDB : Grubby database using the DB abstraction layer
  * 
- * Version 0.2
+ * Version --version--
  * Copyright (c) 2009 Christopher Johnson
  */
 

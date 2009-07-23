@@ -1,4 +1,5 @@
 Grubby : Quick and dirty CRUD
+Version --version--
 
 This is the Grubby library, a database abstraction layer that simplifies building and reusing queries.
 Contact Christopher Johnson if you have any questions: tenorviol@yahoo.com
