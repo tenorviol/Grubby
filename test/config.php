@@ -1,11 +1,13 @@
 <?php
 
-require_once '../Grubby/GrubbyMDB2.php';
-require_once '../Grubby/GrubbyDB.php';
+define('GRUBBY_ROOT', realpath(dirname(__FILE__).'/../Grubby'));
 
-$TEST_DATABASES = array();
+require_once GRUBBY_ROOT.'/GrubbyDB.php';
+require_once GRUBBY_ROOT.'/GrubbyMDB2.php';
 
-$TEST_DATABASES['GrubbyMDB2:MySQL'] = new GrubbyMDB2(
+$databases = array();
+
+$databases[] = new GrubbyMDB2(
     array('phptype' => 'mysql',
           'protocol' => 'unix',
           'socket' => '/tmp/mysql.sock',
@@ -17,7 +19,7 @@ $TEST_DATABASES['GrubbyMDB2:MySQL'] = new GrubbyMDB2(
           'portability' => MDB2_PORTABILITY_ALL ^ MDB2_PORTABILITY_EMPTY_TO_NULL)
 );
 
-$TEST_DATABASES['GrubbyDB:MySQL'] = new GrubbyDB(
+$databases[] = new GrubbyDB(
     array('phptype' => 'mysql',
           'protocol' => 'unix',
           'socket' => '/tmp/mysql.sock',
@@ -25,4 +27,3 @@ $TEST_DATABASES['GrubbyDB:MySQL'] = new GrubbyDB(
           'password' => 'foo',
           'database' => 'foo')
 );
-        

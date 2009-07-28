@@ -1,14 +1,21 @@
 <?php
 /**
- * GrubbyDB : Grubby database using the DB abstraction layer
+ * Grubby : Quick and dirty CRUD operations
+ * http://grubbycrud.com/
  * 
- * Version --version--
- * Copyright (c) 2009 Christopher Johnson
+ * Version: @version@
+ * Date: @date@
+ * 
+ * Copyright (c) @year@ Christopher Johnson
+ * Licensed under the MIT license (see LICENSE file).
  */
 
 require_once 'Grubby.php';
 require_once 'DB.php';
 
+/**
+ * Grubby database using the DB abstraction layer
+ */
 class GrubbyDB extends GrubbyDatabase {
     private $dsn;
     private $options;

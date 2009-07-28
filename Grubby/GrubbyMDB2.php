@@ -1,14 +1,21 @@
 <?php
 /**
- * GrubbyMDB2 : Grubby database using the MDB2 abstraction layer
+ * Grubby : Quick and dirty CRUD operations
+ * http://grubbycrud.com/
  * 
- * Version --version--
- * Copyright (c) 2009 Christopher Johnson
+ * Version: @version@
+ * Date: @date@
+ * 
+ * Copyright (c) @year@ Christopher Johnson
+ * Licensed under the MIT license (see LICENSE file).
  */
 
 require_once 'Grubby.php';
 require_once 'MDB2.php';
 
+/**
+ * GrubbyMDB2 : Grubby database using the MDB2 abstraction layer
+ */
 class GrubbyMDB2 extends GrubbyDatabase {
     private $dsn;
     private $options;

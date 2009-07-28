@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Grubby" default="build" basedir=".">
+    
+    <target name="version">
+        <property file="version"/>
+        <property name="version" value="${version.major}.${version.minor}.${version.build}"/>
+        <echo message="Grubby version ${version}"/>
+    </target>
+    
+    <target name="build" depends="version">
+        <property name="build.file" value="./release/Grubby_${version}.tar.gz"/>
+        
+        <available file="${build.file}" property="build.file.exists"/>
+        <fail if="build.file.exists" message="${build.file} already exists. Increment the version number and try again."/>
+        
+        <tstamp>
+            <format property="year" pattern="yyyy"/>
+        </tstamp>
+        <tstamp>
+            <format property="date" pattern="yyyy-MM-dd HH:mm:ss"/>
+        </tstamp>
+        
+        <mkdir dir="./build" />
+        
+        <copy todir="./build">
+            <fileset dir="./Grubby">
+                <include name="**" />
+            </fileset>
+            
+            <filterchain>
+                <replacetokens begintoken="@" endtoken="@">
+                    <token key="version" value="${version}" />
+                    <token key="year" value="${year}" />
+                    <token key="date" value="${date}" />
+                </replacetokens>
+            </filterchain>
+        </copy>
+        
+        <tar destfile="./release/Grubby_${version}.tar.gz" compression="gzip">
+            <fileset dir="./build">
+                <include name="*" />
+            </fileset>
+        </tar>
+        
+        <delete dir="./build"/>
+    </target>
+    
+</project>

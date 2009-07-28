@@ -1,0 +1,5 @@
+# These version numbers will be copied into each Grubby release during the ant build.
+# All version numbers must be set manually.
+version.major=0
+version.minor=2
+version.build=0

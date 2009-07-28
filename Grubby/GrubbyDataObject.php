@@ -1,8 +1,13 @@
 <?php
 /**
- * @version --version--
- * @author chris
- *
+ * Grubby : Quick and dirty CRUD operations
+ * http://grubbycrud.com/
+ * 
+ * Version: @version@
+ * Date: @date@
+ * 
+ * Copyright (c) @year@ Christopher Johnson
+ * Licensed under the MIT license (see LICENSE file).
  */
 
 abstract class GrubbyDataObject {
