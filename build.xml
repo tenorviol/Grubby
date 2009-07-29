@@ -24,7 +24,7 @@
         <mkdir dir="./build" />
         
         <copy todir="./build">
-            <fileset dir="./Grubby">
+            <fileset dir="./src">
                 <include name="**" />
             </fileset>
             

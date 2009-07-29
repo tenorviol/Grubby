@@ -1,0 +1,16 @@
+Grubby Discards
+
+These are the features that were considered but rejected for one reason or another.
+
+all( filter )
+    The all modifier is necessary but it cannot take a filter argument.
+    Allowing people to put a filter in the all modifier may encourage it to be used more generally, which defeats the purpose.
+    This modifier should only be used when a bulk update or delete is truly needed--a rarity.
+
+A filter cannot be an array of primary key values.
+    It can either be a single primary key value or an associative array of matched equalities.
+    Allowing arrays of primary key values was removed because it's confusing.
+    Example: $table->filter(array(1, 42, 420))
+
+notExpression(expression [, wildcard(s)])
+    The not expression is unnecessary because filter expressions can be negative expressions without adding the confusing extra negative.
