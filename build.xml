@@ -45,6 +45,8 @@
         
         <delete dir="./build"/>
         
+        <echo message="Adding ${build.file} to the git repository..."/>
+        
         <exec executable="git">
             <arg value="add"/>
             <arg value="${build.file}"/>
