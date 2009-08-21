@@ -8,6 +8,9 @@ Copyright (c) @year@ Christopher Johnson
 Licensed under the MIT license (see LICENSE file).
 ==================================================
 
+BUGS
+
+
 CRUD
 
 7. Insert selects. Example: $table->create($table); // duplicates all rows

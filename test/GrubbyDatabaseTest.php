@@ -1,38 +1,12 @@
 <?php
 
-require_once 'config.php';
+require_once dirname(__FILE__).'/config.php';
 
 class GrubbyTest extends PHPUnit_Framework_TestCase {
     
     private $database;
-    private $test_table;
-    
-    // WARNING: This grubby_test table will get dropped and created in the test database
-    private $test_schema = array('name' => 'grubby_test',
-                                'primary_key' => 'id',
-                                'fields' => array(
-                                    array('name'=>'id',       'type'=>'INT', 'auto_increment'=>true),
-                                    array('name'=>'foo',      'type'=>'VARCHAR'),
-                                    array('name'=>'category', 'type'=>'INT'),
-                                    array('name'=>'from',     'type'=>'VARCHAR'),
-                                ),
-                            );
-    
-    // Data for pre-populating grubby_test
-    private $initial_data = array(
-                                array('id'=>1,  'foo'=>'Spew',         'category'=>1, 'from'=>'joe'),
-                                array('id'=>2,  'foo'=>'Chunks',       'category'=>2, 'from'=>'john'),
-                                array('id'=>3,  'foo'=>'Not',          'category'=>3, 'from'=>'mary'),
-                                array('id'=>4,  'foo'=>'Behind',       'category'=>1, 'from'=>'larry'),
-                                array('id'=>5,  'foo'=>'Bars',         'category'=>3, 'from'=>'ed'),
-                                array('id'=>6,  'foo'=>'But Outdoors', 'category'=>2, 'from'=>'serius'),
-                                array('id'=>7,  'foo'=>'See Chris\'s Doo Dads...\\', 'category'=>1, 'from'=>'actual'),
-                                array('id'=>27, 'foo'=>null,           'category'=>1, 'from'=>'chunk'),
-                                array('id'=>28, 'foo'=>'',             'category'=>2, 'from'=>'doppy'),
-                                );
     
     /**
-     * Create grubby_test.
      */
     public function setUp() {
         
@@ -47,24 +21,23 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
                                                  'database' => 'foo')
                                                 );
         }
-        $this->test_table = new GrubbyTable($this->database, $this->test_schema);
-        
-        $this->test_table->dropTable();
-        $this->test_table->createTable();
-        
-        // populate grubby_test with some initial data
-        foreach ($this->initial_data as $row) {
-            $this->test_table->create($row);
-        }
-        //Grubby::$debug = true;
     }
     
     /**
-     * Delete grubby_test.
      */
     public function tearDown() {
-        //Grubby::$debug = false;
-        $this->test_table->dropTable();
+    }
+    
+    public function databaseProvider() {
+        static $return = null;
+        if ($return === null) {
+            global $databases;  // see config.php
+            $return = array();
+            foreach ($databases as $database) {
+                $return[] = array($database);
+            }
+        }
+        return $return;
     }
     
     ////////// GrubbyDatabase TESTS //////////
@@ -72,55 +45,60 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     /**
      * Query the database obtaining a result set.
      * These are typically SELECT statements.
+     * @dataProvider databaseProvider
      */
-    public function testQuery() {
+    public function testQuery($database) {
         // select the grubby_test table
-        $result = $this->database->query('SELECT * FROM `'.$this->test_schema['name'].'`');
+        $result = $database->query('SELECT 42 AS forty_two');
         
         // this should return a GrubbyRecordset
         $this->assertType('GrubbyRecordset', $result);
         
-        // test each row against grubby_test's initial data
-        $i = 0;
-        while ($row = $result->fetch()) {
-            $this->assertEquals($this->initial_data[$i], $row);
-            $i++;
-        }
+        $row = $result->fetch();
+        $this->assertEquals(42, $row['forty_two']);
     }
     
     /**
      * Buggy SQL throws a GrubbyException.
+     * @dataProvider databaseProvider
      * @expectedException GrubbyException
      */
-    public function testQueryError() {
-        $result = $this->database->query('ERRONEOUS SQL');
+    public function testQueryError($database) {
+        $result = $database->query('ERRONEOUS SQL');
     }
     
     /**
      * Database execution manipulate the state of the data.
      * These are typically CREATE, UPDATE and DELETE statements.
+     * @dataProvider databaseProvider
      */
-    public function testExecute() {
-        // update all foos to 'bar' in grubby_test
-        $result = $this->database->execute('UPDATE `'.$this->test_schema['name'].'` SET foo=\'bar\'');
-        
-        // this should return a GrubbyResult with the affected rows
+    public function testExecute($database) {
+        // create a temporary table foo
+        $result = $database->execute('CREATE TEMPORARY TABLE foo (bar INT)');
         $this->assertType('GrubbyResult', $result);
-        $this->assertEquals(count($this->initial_data), $result->affected_rows);
+        
+        $data = array(mt_rand(), mt_rand(), mt_rand());
+        
+        $result = $database->execute('INSERT INTO foo (bar) VALUES ('.implode('),(', $data).')');
+        $this->assertType('GrubbyResult', $result);
+        $this->assertEquals(count($data), $result->affected_rows);
         
         // test the table's foo values
-        $result = $this->database->query('SELECT * FROM `'.$this->test_schema['name'].'`');
+        $result = $database->query('SELECT * FROM foo');
+        $read = array();
         while ($row = $result->fetch()) {
-            $this->assertEquals('bar', $row['foo']);
+            $read[] = $row['bar'];
         }
+        $this->assertEquals($data, $read);
     }
     
     /**
      * Buggy SQL throws a GrubbyException.
+     * @dataProvider databaseProvider
      * @expectedException GrubbyException
      */
-    public function testExecuteError() {
-        $result = $this->database->execute('ERRONEOUS SQL');
+    public function testExecuteError($database) {
+        $result = $database->execute('ERRONEOUS SQL');
     }
     
     public static function wildcardTestProvider() {

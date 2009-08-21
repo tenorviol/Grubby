@@ -471,13 +471,13 @@ class GrubbyTable extends GrubbyQuery {
     }
     
     protected function crudImpl($query) {
-        if (isset($query['create'])) {
+        if (array_key_exists('create', $query)) {
             return $this->createImpl($query);
-        } elseif (isset($query['read'])) {
+        } elseif (array_key_exists('read', $query)) {
             return $this->readImpl($query);
-        } elseif (isset($query['update'])) {
+        } elseif (array_key_exists('update', $query)) {
             return $this->updateImpl($query);
-        } elseif (isset($query['delete'])) {
+        } elseif (array_key_exists('delete', $query)) {
             return $this->deleteImpl($query);
         } else {
             throw new GrubbyException('Malformed Grubby query. This is an internal library problem. Please report.');

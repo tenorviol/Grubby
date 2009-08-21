@@ -1,6 +1,6 @@
 <?php
 
-define('GRUBBY_ROOT', realpath(dirname(__FILE__).'/../Grubby'));
+define('GRUBBY_ROOT', realpath(dirname(__FILE__).'/../src'));
 
 require_once GRUBBY_ROOT.'/GrubbyDB.php';
 require_once GRUBBY_ROOT.'/GrubbyMDB2.php';

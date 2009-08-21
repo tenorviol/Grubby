@@ -6,8 +6,8 @@
  * Copyright (c) 2009 Christopher Johnson
  */
 
-require_once dirname(__FILE__).'/../Grubby/GrubbyDB.php';
-require_once dirname(__FILE__).'/../Grubby/GrubbyDataObject.php';
+require_once dirname(__FILE__).'/../src/GrubbyDB.php';
+require_once dirname(__FILE__).'/../src/GrubbyDataObject.php';
 
 class GrubbyTest extends PHPUnit_Framework_TestCase {
     
@@ -72,88 +72,6 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     public function tearDown() {
         //Grubby::$debug = false;
         $this->test_table->dropTable();
-    }
-    
-    ////////// GrubbyDatabase TESTS //////////
-    
-    /**
-     * Query the database obtaining a result set.
-     * These are typically SELECT statements.
-     */
-    public function testQuery() {
-        // select the grubby_test table
-        $result = $this->database->query('SELECT * FROM `'.$this->test_schema['name'].'`');
-        
-        // this should return a GrubbyRecordset
-        $this->assertType('GrubbyRecordset', $result);
-        
-        // test each row against grubby_test's initial data
-        $i = 0;
-        while ($row = $result->fetch()) {
-            $this->assertEquals($this->initial_data[$i], $row);
-            $i++;
-        }
-    }
-    
-    /**
-     * Buggy SQL throws a GrubbyException.
-     * @expectedException GrubbyException
-     */
-    public function testQueryError() {
-        $result = $this->database->query('ERRONEOUS SQL');
-    }
-    
-    /**
-     * Database execution manipulate the state of the data.
-     * These are typically CREATE, UPDATE and DELETE statements.
-     */
-    public function testExecute() {
-        // update all foos to 'bar' in grubby_test
-        $result = $this->database->execute('UPDATE `'.$this->test_schema['name'].'` SET foo=\'bar\'');
-        
-        // this should return a GrubbyResult with the affected rows
-        $this->assertType('GrubbyResult', $result);
-        $this->assertEquals(count($this->initial_data), $result->affected_rows);
-        
-        // test the table's foo values
-        $result = $this->database->query('SELECT * FROM `'.$this->test_schema['name'].'`');
-        while ($row = $result->fetch()) {
-            $this->assertEquals('bar', $row['foo']);
-        }
-    }
-    
-    /**
-     * Buggy SQL throws a GrubbyException.
-     * @expectedException GrubbyException
-     */
-    public function testExecuteError() {
-        $result = $this->database->execute('ERRONEOUS SQL');
-    }
-    
-    public static function wildcardTestProvider() {
-        return array(
-            array('', '', '', ''),  // empty string
-            array('foo=42', null, null, 'foo=42'),  // no wildcards
-            array('foo=?', 'bar', null, 'foo=\'bar\''),  // single wildcard
-            array('foo=?', 12, GRUBBY_INT, 'foo=12'),  // single integer wildcard
-            array('foo=?', 12, GRUBBY_STRING, 'foo=\'12\''),  // single string wildcard
-            array('foo=? OR bar=?', array(1, 2), array(GRUBBY_INT, GRUBBY_STRING), 'foo=1 OR bar=\'2\''),  // two wildcards
-            array('foo=\'?\' OR bar=?', 'bar', null, 'foo=\'?\' OR bar=\'bar\''),  // single wildcard with prior string embeded ?
-            array('\'', null, null, new GrubbyException()),  // unterminated string exception
-            array('foo=? OR bar=?', 42, null, new GrubbyException()), // not enough wildcards exception
-            array('foo=? OR bar=?', array(1, 2, 3), null, new GrubbyException()), // too many wildcards exception
-        );
-    }
-    
-    /**
-     * @dataProvider wildcardTestProvider
-     */
-    public function testReplaceWildcards($sql, $wildcards, $types, $expected) {
-        if ($expected instanceof GrubbyException) {
-            $this->setExpectedException('GrubbyException');
-        }
-        $result = $this->database->replaceWildcards($sql, $wildcards, $types);
-        $this->assertEquals($expected, $result);
     }
     
     ////////// GrubbyFilter TESTS //////////
@@ -303,6 +221,10 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      */
     public function testReadEmptyFilter() {
         $all = $this->test_table->read(array())->fetchAll();
+        $this->assertEquals(array(), $all);
+        
+        // null was causing the internal error to be thrown
+        $all = $this->test_table->read(null)->fetchAll();
         $this->assertEquals(array(), $all);
     }
     
