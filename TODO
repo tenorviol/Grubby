@@ -8,6 +8,8 @@ Copyright (c) @year@ Christopher Johnson
 Licensed under the MIT license (see LICENSE file).
 ==================================================
 
+1. Fix tests.
+
 BUGS
 
 
@@ -39,4 +41,4 @@ DEBUGGING
 Trace mode for tracking where CRUD operations are called and filters are created.
 4. Production sensitive debug output, I.e. do not write debug output on production servers unless overridden.
 5. Context sensitive output: HTML for web servers, text for command line.
-
+Tally time for executing database queries. Per database and total. Grubby::$elapsed_time, $database->elapsed_time

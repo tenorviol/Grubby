@@ -6,12 +6,11 @@
  * Copyright (c) 2009 Christopher Johnson
  */
 
-require_once dirname(__FILE__).'/../src/GrubbyDB.php';
+require_once 'config.php';
 require_once dirname(__FILE__).'/../src/GrubbyDataObject.php';
 
 class GrubbyTest extends PHPUnit_Framework_TestCase {
     
-    private $database;
     private $test_table;
     
     // WARNING: This grubby_test table will get dropped and created in the test database
@@ -43,17 +42,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      */
     public function setUp() {
         
-        if ($this->sharedFixture['database']) {
-            $this->database = $this->sharedFixture['database'];
-        } else {
-            $this->database = new GrubbyDB(array('phptype' => 'mysql',
-                                                 'protocol' => 'unix',
-                                                 'socket' => '/tmp/mysql.sock',
-                                                 'username' => 'foo',
-                                                 'password' => 'foo',
-                                                 'database' => 'foo')
-                                                );
-        }
+        $this->database = $GLOBALS['database'];
         $this->test_table = new GrubbyTable($this->database, $this->test_schema);
         
         $this->test_table->dropTable();

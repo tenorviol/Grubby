@@ -2,25 +2,11 @@
 
 require_once dirname(__FILE__).'/config.php';
 
-class GrubbyTest extends PHPUnit_Framework_TestCase {
-    
-    private $database;
+class GrubbyDatabaseTest extends PHPUnit_Framework_TestCase {
     
     /**
      */
     public function setUp() {
-        
-        if ($this->sharedFixture['database']) {
-            $this->database = $this->sharedFixture['database'];
-        } else {
-            $this->database = new GrubbyDB(array('phptype' => 'mysql',
-                                                 'protocol' => 'unix',
-                                                 'socket' => '/tmp/mysql.sock',
-                                                 'username' => 'foo',
-                                                 'password' => 'foo',
-                                                 'database' => 'foo')
-                                                );
-        }
     }
     
     /**
@@ -28,26 +14,13 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     public function tearDown() {
     }
     
-    public function databaseProvider() {
-        static $return = null;
-        if ($return === null) {
-            global $databases;  // see config.php
-            $return = array();
-            foreach ($databases as $database) {
-                $return[] = array($database);
-            }
-        }
-        return $return;
-    }
-    
-    ////////// GrubbyDatabase TESTS //////////
-    
     /**
      * Query the database obtaining a result set.
      * These are typically SELECT statements.
-     * @dataProvider databaseProvider
      */
-    public function testQuery($database) {
+    public function testQuery() {
+        $database = $GLOBALS['database'];
+        
         // select the grubby_test table
         $result = $database->query('SELECT 42 AS forty_two');
         
@@ -60,19 +33,21 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     
     /**
      * Buggy SQL throws a GrubbyException.
-     * @dataProvider databaseProvider
      * @expectedException GrubbyException
      */
-    public function testQueryError($database) {
+    public function testQueryError() {
+        $database = $GLOBALS['database'];
+        
         $result = $database->query('ERRONEOUS SQL');
     }
     
     /**
      * Database execution manipulate the state of the data.
      * These are typically CREATE, UPDATE and DELETE statements.
-     * @dataProvider databaseProvider
      */
-    public function testExecute($database) {
+    public function testExecute() {
+        $database = $GLOBALS['database'];
+        
         // create a temporary table foo
         $result = $database->execute('CREATE TEMPORARY TABLE foo (bar INT)');
         $this->assertType('GrubbyResult', $result);
@@ -94,10 +69,10 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     
     /**
      * Buggy SQL throws a GrubbyException.
-     * @dataProvider databaseProvider
      * @expectedException GrubbyException
      */
-    public function testExecuteError($database) {
+    public function testExecuteError() {
+        $database = $GLOBALS['database'];
         $result = $database->execute('ERRONEOUS SQL');
     }
     
@@ -120,10 +95,12 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      * @dataProvider wildcardTestProvider
      */
     public function testReplaceWildcards($sql, $wildcards, $types, $expected) {
+        $database = $GLOBALS['database'];
+        
         if ($expected instanceof GrubbyException) {
             $this->setExpectedException('GrubbyException');
         }
-        $result = $this->database->replaceWildcards($sql, $wildcards, $types);
+        $result = $database->replaceWildcards($sql, $wildcards, $types);
         $this->assertEquals($expected, $result);
     }
 }
