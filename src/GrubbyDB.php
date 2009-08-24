@@ -51,18 +51,22 @@ class GrubbyDB extends GrubbyDatabase {
     public function execute($sql) {
         if (Grubby::$debug) {
             Grubby::debugMessage('Executing: '.$sql);
-            $start = microtime(true);
         }
+        
+        $start = microtime(true);
         
         $connection = $this->getConnection();
         $result = $connection->query($sql);
+        
+        $time = microtime(true) - $start;
+        $this->time += $time;
+        Grubby::$time += $time;
         
         if (Grubby::$debug) {
             if (PEAR::isError($result)) {
                 Grubby::debugMessage('Error: '.$result->getMessage());
             }
-            $end = microtime(true);
-            Grubby::debugMessage('Time: '.number_format($end-$start, 4)." secs");
+            Grubby::debugMessage('Time: '.number_format($time, 4)." secs");
         }
         
         if (PEAR::isError($result)) {
@@ -80,18 +84,22 @@ class GrubbyDB extends GrubbyDatabase {
     public function query($sql) {
         if (Grubby::$debug) {
             Grubby::debugMessage('Querying: '.$sql);
-            $start = microtime(true);
         }
+        
+        $start = microtime(true);
         
         $connection = $this->getConnection();
         $result = $connection->query($sql);
+        
+        $time = microtime(true) - $start;
+        $this->time += $time;
+        Grubby::$time += $time;
         
         if (Grubby::$debug) {
             if (PEAR::isError($result)) {
                 Grubby::debugMessage('Error: '.$result->getMessage());
             }
-            $end = microtime(true);
-            Grubby::debugMessage('Time: '.number_format($end-$start, 4)." secs");
+            Grubby::debugMessage('Time: '.number_format($time, 4)." secs");
         }
         
         if (PEAR::isError($result)) {

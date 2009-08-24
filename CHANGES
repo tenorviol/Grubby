@@ -10,8 +10,16 @@ Licensed under the MIT license (see LICENSE file).
 
 Changes made to Grubby since the last minor release.
 
-BUG FIXES
+BUG FIXES:
 
 $table->read(null)  // throws the wrong error
 // this no longer throws an error, but resolves to empty set
+
+TESTS
+
+2009-08-24 Modified tests to use a configuration file.
+
+SETUP
+
+2009-08-24 Moved the database choice into the table info array $schema['database'] = $foo
 

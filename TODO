@@ -8,8 +8,6 @@ Copyright (c) @year@ Christopher Johnson
 Licensed under the MIT license (see LICENSE file).
 ==================================================
 
-1. Fix tests.
-
 BUGS
 
 
@@ -17,7 +15,6 @@ CRUD
 
 7. Insert selects. Example: $table->create($table); // duplicates all rows
 Array inserts. Example: $table->create(array(array('foo'=>1), array('foo'=>42));
-Create on duplicate Update. Example: $table->createUpdate($create_array, $update_array);  // one or other
 
 FILTERS
 
@@ -41,4 +38,9 @@ DEBUGGING
 Trace mode for tracking where CRUD operations are called and filters are created.
 4. Production sensitive debug output, I.e. do not write debug output on production servers unless overridden.
 5. Context sensitive output: HTML for web servers, text for command line.
-Tally time for executing database queries. Per database and total. Grubby::$elapsed_time, $database->elapsed_time
+1. Tally time for executing database queries. Per database and total. Grubby::$time, $database->time (done, but write a test for it)
+
+MISC
+
+All GrubbyTable info array items should be overridable. I.e. $table->database($other_db)
+Mapping data from one form to another.

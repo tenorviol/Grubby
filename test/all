@@ -2,11 +2,11 @@
 
 cd `dirname $BASH_SOURCE`
 
-echo -e "\n\n_______ GrubbyDatabaseTest _______"
+echo -e "\n_____GrubbyDatabaseTest_____________________________________________"
 phpunit GrubbyDatabaseTest.php
 
-echo -e "\n\n_______ GrubbyTest _______"
+echo -e "\n_____GrubbyTest_____________________________________________________"
 phpunit GrubbyTest.php
 
-echo -e "\n\n_______ GrubbyDatabaseTest using config-db.php _______"
+echo -e "\n_____GrubbyDatabaseTest using config-db.php_________________________"
 phpunit --bootstrap config-db.php GrubbyDatabaseTest.php

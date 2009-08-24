@@ -7,7 +7,7 @@
  */
 
 require_once 'config.php';
-require_once dirname(__FILE__).'/../src/GrubbyDataObject.php';
+require_once GRUBBY_ROOT.'/GrubbyDataObject.php';
 
 class GrubbyTest extends PHPUnit_Framework_TestCase {
     
@@ -28,9 +28,6 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     private $initial_data = array(
                                 array('id'=>1,  'foo'=>'Spew',         'category'=>1, 'from'=>'joe'),
                                 array('id'=>2,  'foo'=>'Chunks',       'category'=>2, 'from'=>'john'),
-                                array('id'=>3,  'foo'=>'Not',          'category'=>3, 'from'=>'mary'),
-                                array('id'=>4,  'foo'=>'Behind',       'category'=>1, 'from'=>'larry'),
-                                array('id'=>5,  'foo'=>'Bars',         'category'=>3, 'from'=>'ed'),
                                 array('id'=>6,  'foo'=>'But Outdoors', 'category'=>2, 'from'=>'serius'),
                                 array('id'=>7,  'foo'=>'See Chris\'s Doo Dads...\\', 'category'=>1, 'from'=>'actual'),
                                 array('id'=>27, 'foo'=>null,           'category'=>1, 'from'=>'chunk'),
@@ -42,8 +39,8 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      */
     public function setUp() {
         
-        $this->database = $GLOBALS['database'];
-        $this->test_table = new GrubbyTable($this->database, $this->test_schema);
+        $this->test_schema['database'] = $GLOBALS['database'];
+        $this->test_table = new GrubbyTable($this->test_schema);
         
         $this->test_table->dropTable();
         $this->test_table->createTable();
@@ -532,7 +529,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     public function testObjectRead() {
         $object_schema = $this->test_schema;
         $object_schema['class'] = 'stdClass';
-        $table = new GrubbyTable($this->database, $object_schema);
+        $table = new GrubbyTable($object_schema);
         
         $set = $table->read();
         
@@ -562,7 +559,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     public function testGrubbyDataObject() {
         $object_schema = $this->test_schema;
         $object_schema['class'] = 'TestDataObject';
-        $table = new GrubbyTable($this->database, $object_schema);
+        $table = new GrubbyTable($object_schema);
         TestDataObject::$grubby_query = $table;
         
         // read an object;
@@ -646,7 +643,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testTableNameRead() {
-        $table = new GrubbyTable($this->database, $this->test_schema['name']);
+        $table = new GrubbyTable(array('name'=>$this->test_schema['name'], 'database'=>$this->test_schema['database']));
         $all = $table->read()->fetchAll();
         $this->assertEquals($this->initial_data, $all);
     }

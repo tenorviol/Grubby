@@ -14,3 +14,8 @@ A filter cannot be an array of primary key values.
 
 notExpression(expression [, wildcard(s)])
     The not expression is unnecessary because filter expressions can be negative expressions without adding the confusing extra negative.
+
+Create on duplicate Update. Example: $table->createUpdate($create_array, $update_array);  // one or other
+    This overcomplicates the library. Look into databases that support this feature. Look for an elegant way to support it.
+    
+    

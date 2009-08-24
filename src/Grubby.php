@@ -16,6 +16,7 @@ define('GRUBBY_DATETIME', 3);
 
 class Grubby {
     public static $debug = false;
+    public static $time = null;
     
     public static function debugMessage($message) {
         if ($_SERVER['REQUEST_URI']) {
@@ -449,9 +450,7 @@ class GrubbyTable extends GrubbyQuery {
      *          ['sort'] => array(column1, column2, etc.) affecting all reads of the table
      *      )
      */
-    public function __construct($database, $info) {
-        $this->database = $database;
-        
+    public function __construct($info) {
         if (is_string($info)) {
             $info = array('name'=>$info);
         }
@@ -467,7 +466,7 @@ class GrubbyTable extends GrubbyQuery {
      * @return string
      */
     public function formatFieldValue($field, $value) {
-        return $this->database->formatString($value);
+        return $this->info['database']->formatString($value);
     }
     
     protected function crudImpl($query) {
@@ -498,22 +497,22 @@ class GrubbyTable extends GrubbyQuery {
                 $name = $field['name'];
                 if (is_array($data) && isset($data[$name])) {
                     $fields[] = '`'.$name.'`';
-                    $values[] = $this->database->formatString($data[$name]);
+                    $values[] = $this->info['database']->formatString($data[$name]);
                 } elseif (isset($data->$name)) {
                     $fields[] = '`'.$name.'`';
-                    $values[] = $this->database->formatString($data->$name);
+                    $values[] = $this->info['database']->formatString($data->$name);
                 }
             }
         } else {
             foreach ($data as $key => $value) {
                 $fields[] = '`'.$key.'`';
-                $values[] = $this->database->formatString($value);
+                $values[] = $this->info['database']->formatString($value);
             }
         }
         $sql = 'INSERT INTO `'.$this->info['name'].'` ('.implode(',',$fields).') VALUES ('.implode(',',$values).')';
-        $result = $this->database->execute($sql);
+        $result = $this->info['database']->execute($sql);
         if ($result->affected_rows == 1) {
-            $result->insert_id = $this->database->lastInsertID();
+            $result->insert_id = $this->info['database']->lastInsertID();
         }
         return $result;
     }
@@ -560,7 +559,7 @@ class GrubbyTable extends GrubbyQuery {
         }
         
         $sql = 'SELECT '.$fields.' FROM `'.$this->info['name'].'`'.$where.$group.$order.$limit;
-        $result = $this->database->query($sql);
+        $result = $this->info['database']->query($sql);
         $result->setObjectType($this->info['class']);
         if ($first) {
             return $result->fetch();  // Return the first result of the iterator
@@ -599,7 +598,7 @@ class GrubbyTable extends GrubbyQuery {
         }
         
         $sql = 'UPDATE `' . $this->info['name'] . "` SET $change".$where;
-        $result = $this->database->execute($sql);
+        $result = $this->info['database']->execute($sql);
         return $result;
     }
     
@@ -618,7 +617,7 @@ class GrubbyTable extends GrubbyQuery {
         $where = $this->buildWhereClause($query);
         
         $sql = 'DELETE FROM `'.$this->info['name'].'`'.$where;
-        $result = $this->database->execute($sql);
+        $result = $this->info['database']->execute($sql);
         return $result;
     }
     
@@ -669,7 +668,7 @@ class GrubbyTable extends GrubbyQuery {
                 $sql = $expression[0];
                 $wildcards = isset($expression[1]) ? $expression[1] : array();
                 $types = isset($expression[2]) ? $expression[2] : array();
-                $where[] = '('.$this->database->replaceWildcards($sql, $wildcards, $types).')';
+                $where[] = '('.$this->info['database']->replaceWildcards($sql, $wildcards, $types).')';
             }
         }
         
@@ -712,17 +711,17 @@ class GrubbyTable extends GrubbyQuery {
                     (isset($column['character_set']) ? ' CHARACTER SET '.$column['character_set'] : '').
                     (isset($column['collate']) ? ' COLLATE '.$column['collate'] : '').
                     ($null ? ' NULL' : ' NOT NULL').
-                    (isset($column['default']) ? ' DEFAULT '.$database->table($info['name'])->formatFieldValue($column['name'], $column['default']) : '').
+                    (isset($column['default']) ? ' DEFAULT '.$info['database']->table($info['name'])->formatFieldValue($column['name'], $column['default']) : '').
                     (isset($column['auto_increment']) && $column['auto_increment'] ? ' AUTO_INCREMENT' : '').
                     ($pk ? ' PRIMARY KEY' : '');
         }
         $sql = 'CREATE TABLE `'.$this->info['name']."` (\n    ".implode(",\n    ", $column_sql).')';
-        return $this->database->execute($sql);
+        return $this->info['database']->execute($sql);
     }
     
     public function dropTable() {
         $sql = 'DROP TABLE IF EXISTS `'.$this->info['name'].'`';
-        return $this->database->execute($sql);
+        return $this->info['database']->execute($sql);
     }
 }
 
