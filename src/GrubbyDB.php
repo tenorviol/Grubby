@@ -21,6 +21,8 @@ class GrubbyDB extends GrubbyDatabase {
     private $options;
     private $connection = null;
     
+    public $time;
+    
     /**
      * Creates a new Grubby database.
      */
@@ -106,7 +108,7 @@ class GrubbyDB extends GrubbyDatabase {
             throw new GrubbyException($result->getMessage());
         }
         
-        return new GrubbyDBRecordset($result);
+        return new GrubbyDBRecordset($this, $result);
     }
     
     public function lastInsertID() {
@@ -143,7 +145,7 @@ class GrubbyDBResult extends GrubbyResult {
     }
 }
 
-/*
+/**
  * 
  */
 class GrubbyDBRecordset extends GrubbyRecordset {
@@ -152,7 +154,8 @@ class GrubbyDBRecordset extends GrubbyRecordset {
      * Creates a new recordset resource handler.
      * @param result mixed result of a call to DB::query
      */
-    public function __construct($result) {
+    public function __construct($database, $result) {
+        $this->database = $database;
         if ($result instanceof DB_Error) {
             $this->error = $result;
         } else {

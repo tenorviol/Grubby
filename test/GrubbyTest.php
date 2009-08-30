@@ -20,8 +20,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
                                     array('name'=>'id',       'type'=>'INT', 'auto_increment'=>true),
                                     array('name'=>'foo',      'type'=>'VARCHAR'),
                                     array('name'=>'category', 'type'=>'INT'),
-                                    array('name'=>'from',     'type'=>'VARCHAR'),
-                                ),
+                                    array('name'=>'from',     'type'=>'VARCHAR'),                                ),
                             );
     
     // Data for pre-populating grubby_test
@@ -652,7 +651,68 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      * Tests features like date_created and date_modified
      */
     public function testAutoFillFields() {
-        $this->markTestIncomplete();
+        // modify the test schema to include auto-fill fields
+        $schema = $this->test_schema;
+        $schema['fields'][] = array('name'=>'created', 'type'=>'DATETIME', 'auto'=>GRUBBY_AUTO_CREATE_DATE);
+        $schema['fields'][] = array('name'=>'modified', 'type'=>'DATETIME', 'auto'=>GRUBBY_AUTO_UPDATE_DATE);
+        $schema['fields'][] = array('name'=>'ipaddr_created', 'type'=>'VARCHAR', 'size'=>255, 'auto'=>GRUBBY_AUTO_CREATE_REMOTE_ADDR);
+        $schema['fields'][] = array('name'=>'ipaddr_modified', 'type'=>'VARCHAR', 'size'=>255, 'auto'=>GRUBBY_AUTO_UPDATE_REMOTE_ADDR);
+        
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        
+        // drop and recreate the table
+        $table = new GrubbyTable($schema);
+        $table->dropTable();
+        $table->createTable();
+        
+        // get database time before creation
+        $result = $schema['database']->query('SELECT NOW() as now')->fetch();
+        $before_create = strtotime($result['now']);
+        
+        // create initial data rows
+        foreach ($this->initial_data as $row) {
+            $table->create($row);
+        }
+        
+        // get database time after creation
+        $result = $schema['database']->query('SELECT NOW() as now')->fetch();
+        $after_create = strtotime($result['now']);
+        // test each row for auto-field values
+        $read = $table->read();
+        while ($row = $read->fetch()) {
+            $this->assertGreaterThanOrEqual($before_create, strtotime($row['created']));
+            $this->assertLessThanOrEqual($after_create, strtotime($row['created']));
+            $this->assertGreaterThanOrEqual($before_create, strtotime($row['modified']));
+            $this->assertLessThanOrEqual($after_create, strtotime($row['modified']));
+            $this->assertEquals($_SERVER['REMOTE_ADDR'], $row['ipaddr_created']);
+            $this->assertEquals($_SERVER['REMOTE_ADDR'], $row['ipaddr_modified']);
+        }
+        
+        // sleep 1 sec, change auto values
+        sleep(1);
+        $_SERVER['REMOTE_ADDR'] = 'Something that cannot be an ip';
+        
+        // get database time before update
+        $result = $schema['database']->query('SELECT NOW() as now')->fetch();
+        $before_update = strtotime($result['now']);
+        
+        // update all rows
+        $table->all()->update(array('foo'=>'bar'));
+        
+        // get database time after update
+        $result = $schema['database']->query('SELECT NOW() as now')->fetch();
+        $after_update = strtotime($result['now']);
+        
+        // test each row for auto-field values
+        $read = $table->read();
+        while ($row = $read->fetch()) {
+            $this->assertGreaterThanOrEqual($before_create, strtotime($row['created']));
+            $this->assertLessThanOrEqual($after_create, strtotime($row['created']));
+            $this->assertGreaterThanOrEqual($before_update, strtotime($row['modified']));
+            $this->assertLessThanOrEqual($after_update, strtotime($row['modified']));
+            $this->assertEquals('127.0.0.1', $row['ipaddr_created']);
+            $this->assertEquals($_SERVER['REMOTE_ADDR'], $row['ipaddr_modified']);
+        }
     }
 }
 

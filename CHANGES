@@ -23,3 +23,10 @@ SETUP
 
 2009-08-24 Moved the database choice into the table info array $schema['database'] = $foo
 
+DEBUGGING
+
+2009-08-26 Tally time for executing database queries. Per database and total.
+    Grubby::$time, $database->time
+    Test added to GrubbyDatabaseTest::testExecute
+
+2009-08-30 Added auto-fields for create/update datetime and create/update ipaddr

@@ -14,15 +14,23 @@ define('GRUBBY_INT', 1);
 define('GRUBBY_STRING', 2);
 define('GRUBBY_DATETIME', 3);
 
+define('GRUBBY_AUTO_CREATE_DATE', 1);
+define('GRUBBY_AUTO_UPDATE_DATE', 2);
+define('GRUBBY_AUTO_CREATE_REMOTE_ADDR', 3);
+define('GRUBBY_AUTO_UPDATE_REMOTE_ADDR', 4);
+
+/**
+ * 
+ */
 class Grubby {
     public static $debug = false;
-    public static $time = null;
+    public static $time = 0;
     
     public static function debugMessage($message) {
         if ($_SERVER['REQUEST_URI']) {
-            print '<div class="debug">'.htmlspecialchars($message).'</div>';
+            print '<div class="grubby debug">'.htmlspecialchars($message).'</div>';
         } else {
-            print $message."\n";
+            print 'Grubby: '.$message."\n";
         }
     }
 }
@@ -46,8 +54,17 @@ abstract class GrubbyDatabase {
      */
     public abstract function query($sql);
     
+    /**
+     * @return mixed
+     */
     public abstract function lastInsertID();
     
+    /**
+     * 
+     * @param $value mixed
+     * @param $type string
+     * @return string
+     */
     public function format($value, $type = GRUBBY_STRING) {
         switch ($type) {
         case GRUBBY_INT:
@@ -328,6 +345,9 @@ class GrubbyQueryModifier extends GrubbyQuery {
     }
 }
 
+/**
+ * 
+ */
 class GrubbyQueryAll extends GrubbyQuery {
     
     /**
@@ -360,10 +380,19 @@ class GrubbyFilter {
         $this->filter = $filter;
     }
     
+    /**
+     * 
+     * @param $table
+     * @return unknown_type
+     */
     public function setTable($table) {
         $this->table = $table;
     }
     
+    /**
+     * 
+     * @return boolean
+     */
     public function emptySet() {
         if ($this->expression === null) {
             $this->buildExpression();
@@ -371,6 +400,10 @@ class GrubbyFilter {
         return $this->empty;
     }
     
+    /**
+     * 
+     * @return string
+     */
     public function getExpression() {
         if ($this->expression === null) {
             $this->buildExpression();
@@ -378,6 +411,9 @@ class GrubbyFilter {
         return $this->expression;
     }
     
+    /**
+     * 
+     */
     private function buildExpression() {
         if (empty($this->filter)) {
             // empty set
@@ -457,6 +493,10 @@ class GrubbyTable extends GrubbyQuery {
         $this->info = $info;
     }
     
+    /**
+     * 
+     * @return string|array|null
+     */
     public function primaryKey() {
         return $this->info['primary_key'];
     }
@@ -469,6 +509,9 @@ class GrubbyTable extends GrubbyQuery {
         return $this->info['database']->formatString($value);
     }
     
+    /**
+     * @see src/GrubbyQuery#crudImpl()
+     */
     protected function crudImpl($query) {
         if (array_key_exists('create', $query)) {
             return $this->createImpl($query);
@@ -495,7 +538,13 @@ class GrubbyTable extends GrubbyQuery {
         if (isset($this->info['fields'])) {
             foreach ($this->info['fields'] as $field) {
                 $name = $field['name'];
-                if (is_array($data) && isset($data[$name])) {
+                if ($field['auto'] == GRUBBY_AUTO_CREATE_DATE || $field['auto'] == GRUBBY_AUTO_UPDATE_DATE) {
+                    $fields[] = '`'.$name.'`';
+                    $values[] = 'NOW()';
+                } elseif ($field['auto'] == GRUBBY_AUTO_CREATE_REMOTE_ADDR || $field['auto'] == GRUBBY_AUTO_UPDATE_REMOTE_ADDR) {
+                    $fields[] = '`'.$name.'`';
+                    $values[] = $this->info['database']->formatString($_SERVER['REMOTE_ADDR']);
+                } elseif (is_array($data) && isset($data[$name])) {
                     $fields[] = '`'.$name.'`';
                     $values[] = $this->info['database']->formatString($data[$name]);
                 } elseif (isset($data->$name)) {
@@ -576,19 +625,56 @@ class GrubbyTable extends GrubbyQuery {
     private function updateImpl($query) {
         //print_r($query);
         $data = $query['update'];
-        $primary = '';
-        $change = null;
-        $pk_bound = false;
-        $first = true;
-        foreach ($data as $key => $value) {
-            if ($key == $this->info['primary_key']) {
-                $query['filters'][] = new GrubbyFilter($value);
-                $pk_bound = true;
-            } else {
-                $first ? $first = false : $change .= ', ';
-                $change .= "`$key`=" . $this->formatFieldValue($key, $value);
+        if (is_object($data)) {
+            $data = get_object_vars($data);
+        }
+        
+        $types = array();
+        $auto_fields = array();
+        if ($this->info['fields']) {
+            foreach ($this->info['fields'] as $field) {
+                switch ($field['type']) {
+                case 'INT':
+                    $type = GRUBBY_INT;
+                    break;
+                case 'DATETIME':
+                    $type = GRUBBY_DATETIME;
+                    break;
+                default:
+                    $type = GRUBBY_STRING;
+                    break;
+                }
+                $types[$field['name']] = $type;
+                if ($field['auto']) {
+                    $auto_fields[$field['name']] = $field['auto'];
+                }
             }
         }
+        
+        $pk_bound = false;
+        if ($this->info['primary_key']) {
+            $pk = $this->info['primary_key'];
+            if (array_key_exists($pk, $data)) {
+                $query['filters'][] = new GrubbyFilter($data[$pk]);
+                unset($data[$pk]);
+                $pk_bound = true;
+            }
+        }
+        
+        $changes = array();
+        foreach ($data as $field=>$value) {
+            $changes[$field] = "`$field`=".$this->info['database']->formatString($value);
+        }
+        foreach ($auto_fields as $field=>$auto) {
+            switch ($auto) {
+            case GRUBBY_AUTO_UPDATE_DATE:
+                $changes[$field] = "`$field`=NOW()";
+                break;
+            case GRUBBY_AUTO_UPDATE_REMOTE_ADDR:
+                $changes[$field] = "`$field`=".$this->info['database']->formatString($_SERVER['REMOTE_ADDR']);
+            }
+        }
+        $change = implode(', ', $changes);
         
         // WHERE clause
         $where = $this->buildWhereClause($query);
@@ -597,7 +683,7 @@ class GrubbyTable extends GrubbyQuery {
             throw new GrubbyException('Bulk updates must be accompanied by an all() qualifier.');
         }
         
-        $sql = 'UPDATE `' . $this->info['name'] . "` SET $change".$where;
+        $sql = 'UPDATE `'.$this->info['name'].'` SET '.$change.$where;
         $result = $this->info['database']->execute($sql);
         return $result;
     }
@@ -621,6 +707,11 @@ class GrubbyTable extends GrubbyQuery {
         return $result;
     }
     
+    /**
+     * 
+     * @param $query
+     * @return unknown_type
+     */
     private function buildFieldList(&$query) {
         if (isset($query['fields'])) {
             if (is_array($query['fields'])) {
@@ -719,6 +810,10 @@ class GrubbyTable extends GrubbyQuery {
         return $this->info['database']->execute($sql);
     }
     
+    /**
+     * 
+     * @return unknown_type
+     */
     public function dropTable() {
         $sql = 'DROP TABLE IF EXISTS `'.$this->info['name'].'`';
         return $this->info['database']->execute($sql);
@@ -737,10 +832,20 @@ class GrubbyResult {
 abstract class GrubbyRecordset {
     protected $object_type;
     
+    /**
+     * 
+     * @param $object_type
+     * @return unknown_type
+     */
     public function setObjectType($object_type) {
         $this->object_type = $object_type;
     }
     
+    /**
+     * 
+     * @param $result
+     * @return unknown_type
+     */
     protected function unmarshal($result) {
         if ($this->object_type) {
             $object = new $this->object_type;
