@@ -259,6 +259,15 @@ class GrubbyQuery {
     }
     
     /**
+     * Reduce the set of returned records to those not matching the filter equality.
+     * @param $filter int|string|array
+     * @return GrubbyQuery
+     */
+    public function not($filter) {
+        return new GrubbyQueryModifier($this, array('filters'=>new GrubbyNotFilter($filter)));
+    }
+    
+    /**
      * Only take a certain sub-set of the records.
      * @param $offset int
      * @param $count int
@@ -452,6 +461,12 @@ class GrubbyFilter {
     }
 }
 
+class GrubbyNotFilter extends GrubbyFilter {
+    public function getExpression() {
+        return 'NOT ('.parent::getExpression().')';
+    }
+}
+
 /**
  * Represents a database table, or a two dimensional ordering of fields.
  */
@@ -629,27 +644,8 @@ class GrubbyTable extends GrubbyQuery {
             $data = get_object_vars($data);
         }
         
-        $types = array();
-        $auto_fields = array();
-        if ($this->info['fields']) {
-            foreach ($this->info['fields'] as $field) {
-                switch ($field['type']) {
-                case 'INT':
-                    $type = GRUBBY_INT;
-                    break;
-                case 'DATETIME':
-                    $type = GRUBBY_DATETIME;
-                    break;
-                default:
-                    $type = GRUBBY_STRING;
-                    break;
-                }
-                $types[$field['name']] = $type;
-                if ($field['auto']) {
-                    $auto_fields[$field['name']] = $field['auto'];
-                }
-            }
-        }
+        $field_index = $this->getFieldIndex();
+        $auto_index  = $this->getAutoIndex();
         
         $pk_bound = false;
         if ($this->info['primary_key']) {
@@ -662,17 +658,22 @@ class GrubbyTable extends GrubbyQuery {
         }
         
         $changes = array();
-        foreach ($data as $field=>$value) {
-            $changes[$field] = "`$field`=".$this->info['database']->formatString($value);
+        foreach ($data as $field => $value) {
+            if (array_key_exists($field, $field_index)) {
+                $changes[$field] = $this->info['database']->formatString($value);
+            }
         }
-        foreach ($auto_fields as $field=>$auto) {
+        foreach ($auto_index as $field => $auto) {
             switch ($auto) {
             case GRUBBY_AUTO_UPDATE_DATE:
-                $changes[$field] = "`$field`=NOW()";
+                $changes[$field] = 'NOW()';
                 break;
             case GRUBBY_AUTO_UPDATE_REMOTE_ADDR:
-                $changes[$field] = "`$field`=".$this->info['database']->formatString($_SERVER['REMOTE_ADDR']);
+                $changes[$field] = $this->info['database']->formatString($_SERVER['REMOTE_ADDR']);
             }
+        }
+        foreach ($changes as $field => $change) {
+            $changes[$field] = "`$field`=$change";
         }
         $change = implode(', ', $changes);
         
@@ -705,6 +706,49 @@ class GrubbyTable extends GrubbyQuery {
         $sql = 'DELETE FROM `'.$this->info['name'].'`'.$where;
         $result = $this->info['database']->execute($sql);
         return $result;
+    }
+    
+    private $field_index = null;
+    private $auto_index = null;
+    
+    private function getFieldIndex() {
+        if ($this->field_index === null) {
+            $this->buildFieldIndex();
+        }
+        return $this->field_index;
+    }
+    
+    private function getAutoIndex() {
+        if ($this->auto_index === null) {
+            $this->buildFieldIndex();
+        }
+        return $this->auto_index;
+    }
+    
+    private function buildFieldIndex() {
+        $this->field_index = array();
+        $this->auto_index = array();
+        
+        foreach ($this->info['fields'] as $field) {
+            $name = $field['name'];
+            
+            switch (strtoupper($field['type'])) {
+            case 'INT':
+                $type = GRUBBY_INT;
+                break;
+            case 'DATETIME':
+                $type = GRUBBY_DATETIME;
+                break;
+            default:
+                $type = GRUBBY_STRING;
+            }
+            
+            $this->field_index[$name] = array('name'=>$name, 'type'=>$type);
+            
+            if ($field['auto']) {
+                $this->auto_index[$name] = $field['auto'];
+            }
+        }
     }
     
     /**

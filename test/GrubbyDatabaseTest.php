@@ -77,7 +77,7 @@ class GrubbyDatabaseTest extends PHPUnit_Framework_TestCase {
         $this->assertGreaterThan(0, $time);  // some database time should have been spent
         $this->assertEquals($grubby_time, $database_time);  // one database, equal times
         $this->assertLessThanOrEqual($time, $grubby_time);  // more total time than database time
-        $this->assertGreaterThan($time*.8, $grubby_time);  // most of time spent in database
+        $this->assertGreaterThan($time*.5, $grubby_time);  // majority of time spent in database
     }
     
     /**

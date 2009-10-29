@@ -46,7 +46,10 @@
         <delete dir="./build"/>
         
         <echo message="Uploading ${build.file} to grubbycrud.com"/>
-        <scp file="${build.file}" todir="tenorviol:9kaAk2lfRt@grubbycrud.com:grubbycrud.com/downloads/"/>
+        <exec executable="scp">
+            <arg value="${build.file}"/>
+            <arg value="tenorviol@grubbycrud.com:grubbycrud.com/downloads/"/>
+        </exec>
     </target>
     
 </project>

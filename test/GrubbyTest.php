@@ -28,7 +28,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
                                 array('id'=>1,  'foo'=>'Spew',         'category'=>1, 'from'=>'joe'),
                                 array('id'=>2,  'foo'=>'Chunks',       'category'=>2, 'from'=>'john'),
                                 array('id'=>6,  'foo'=>'But Outdoors', 'category'=>2, 'from'=>'serius'),
-                                array('id'=>7,  'foo'=>'See Chris\'s Doo Dads...\\', 'category'=>1, 'from'=>'actual'),
+                                array('id'=>7,  'foo'=>'See Chris\'s Tests...\\', 'category'=>1, 'from'=>'actual'),
                                 array('id'=>27, 'foo'=>null,           'category'=>1, 'from'=>'chunk'),
                                 array('id'=>28, 'foo'=>'',             'category'=>2, 'from'=>'doppy'),
                                 );
@@ -213,6 +213,39 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(array(), $all);
     }
     
+    /**
+     * The not filter negates the entire filter.
+     * 
+     * not(42)  // everything except the record with primary key 42
+     * not(array('category'=>1, 'from'=>'joe'))  // Everything without category 1 AND from='joe'
+     */
+    public function testReadNotFilter() {
+        $compare = array();
+        foreach ($this->initial_data as $row) {
+            if (!($row['category']==1 && $row['from']=='joe')) {
+                $compare[] = $row;
+            }
+        }
+        $all = $this->test_table->not(array('category'=>1, 'from'=>'joe'))->read()->fetchAll();
+        $this->assertEquals($compare, $all);
+    }
+    
+    /**
+     * Not empty filter is assumed to be a mistake and should return the empty set.
+     */
+    public function testReadNotEmptyFilter() {
+        $read = $this->test_table->not(null)->read()->fetchAll();
+        $this->assertEquals(array(), $read);
+    }
+    
+    /**
+     * Not nothing is not allowed. Either filter or don't filter, but don't call not with no argument.
+    public function testReadNotNothingFilter() {
+        $read = $this->test_table->not()->read()->fetchAll();
+        $this->assertEquals(array(), $read);
+    }
+     */
+    
     public function testFilterExpression() {
         $all = $this->test_table->filterExpression('category=1')->read()->fetchAll();
         
@@ -261,8 +294,15 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
             $change = 'update_pk_test';
             $this->assertNotEquals($change, $row['foo']); // sanity check
             $row['foo'] = $change;
+            
+            // add an extra column (this should not get saved to the database)
+            $row['overload'] = 'bar';
+            
             $result = $this->test_table->update($row);
             $this->assertEquals(1, $result->affected_rows);
+            
+            // remove the over-filled row before the comparison test
+            unset($row['overload']);
             
             // after: read the row and check it against the modified data
             $read = $this->test_table->read($pk);
