@@ -38,7 +38,7 @@ abstract class GrubbyDataObject {
         // if updating didn't work out, try inserting
         if ($insert) {
             $result = $query->create($this);
-            if (!isset($this->$pk)) {
+            if (empty($this->$pk)) {
                 $this->$pk = $result->insert_id;
             }
         }

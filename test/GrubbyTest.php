@@ -1,12 +1,16 @@
 <?php
 /**
- * GrubbyTest : PHPUnit tests of the Grubby and GrubbyMDB2 libraries
+ * Grubby : Quick and dirty CRUD operations
+ * http://grubbycrud.com/
  * 
- * Version 0.1
- * Copyright (c) 2009 Christopher Johnson
+ * Version: @version@
+ * Date: @date@
+ * 
+ * Copyright (c) @year@ Christopher Johnson
+ * Licensed under the MIT license (see LICENSE file).
  */
 
-require_once 'config.php';
+require_once dirname(__FILE__).'/config.php';
 require_once GRUBBY_ROOT.'/GrubbyDataObject.php';
 
 class GrubbyTest extends PHPUnit_Framework_TestCase {
@@ -25,42 +29,60 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     
     // Data for pre-populating grubby_test
     private $initial_data = array(
-                                array('id'=>1,  'foo'=>'Spew',         'category'=>1, 'from'=>'joe'),
+                                array('id'=>1,  'foo'=>'Spew',         'category'=>1, 'from'=>'serius'),
                                 array('id'=>2,  'foo'=>'Chunks',       'category'=>2, 'from'=>'john'),
                                 array('id'=>6,  'foo'=>'But Outdoors', 'category'=>2, 'from'=>'serius'),
-                                array('id'=>7,  'foo'=>'See Chris\'s Tests...\\', 'category'=>1, 'from'=>'actual'),
-                                array('id'=>27, 'foo'=>null,           'category'=>1, 'from'=>'chunk'),
-                                array('id'=>28, 'foo'=>'',             'category'=>2, 'from'=>'doppy'),
+                                array('id'=>7,  'foo'=>'See Chris\'s Tests...\\', 'category'=>1, 'from'=>'john'),
+                                array('id'=>27, 'foo'=>null,           'category'=>1, 'from'=>'alex'),
+                                array('id'=>28, 'foo'=>'',             'category'=>2, 'from'=>'meyers'),
                                 );
     
     /**
-     * Create grubby_test.
+     * Returns the field definition from the schema.
+     * @param $name of the field
+     * @return array|null
+     */
+    private function schemaField($name) {
+        foreach ($this->test_schema['fields'] as $field) {
+            if ($field['name'] == $name) {
+                return $field;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Create the grubby_test table,
+     * and populate with the initial data.
      */
     public function setUp() {
-        
         $this->test_schema['database'] = $GLOBALS['database'];
         $this->test_table = new GrubbyTable($this->test_schema);
         
         $this->test_table->dropTable();
         $this->test_table->createTable();
         
-        // populate grubby_test with some initial data
+        // populate grubby_test with initial data
         foreach ($this->initial_data as $row) {
             $this->test_table->create($row);
         }
-        //Grubby::$debug = true;
     }
     
     /**
-     * Delete grubby_test.
+     * Drop the grubby_test table.
      */
     public function tearDown() {
-        //Grubby::$debug = false;
         $this->test_table->dropTable();
     }
     
     ////////// GrubbyFilter TESTS //////////
     
+    /**
+     * Filter tests.
+     * (filter, expected result)
+     * 
+     * @return array
+     */
     public function filterTestProvider() {
         return array(
             array(42, '`id`=\'42\''),
@@ -73,6 +95,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     }
     
     /**
+     * Create a new filter and check that the resulting sql is as expected.
      * @dataProvider filterTestProvider
      */
     public function testGrubbyFilter($filter, $expected) {
@@ -85,101 +108,76 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     ////////// GrubbyTable TESTS //////////
     
     /**
-     * Read single records by primary key value.
-     * Reads of this type return the row directly, not a recordset object.
+     * Read a single record by its primary key value.
+     * This type of read returns the row directly, not a recordset object.
      */
     public function testReadPK() {
         foreach ($this->initial_data as $row) {
-            // read each initial data row back from the database
-            $result = $this->test_table->read($row['id']);
-            
-            // compare it against the original insert
-            $this->assertEquals($row, $result);
+            $result = $this->test_table->read($row['id']);  // read each initial data row
+            $this->assertEquals($row, $result);             // compare against the original
         }
     }
     
     /**
-     * Create a record and read it back.
-     * Create returns a GrubbyResult: affected_rows = 1 and insert_id = the last auto increment id.
+     * Tests for creating a new data row
+     * and reading the data back.
+     * @return array
+     * @see testCreateAndRead
      */
-    public function testCreateAndRead() {
+    public function createAndReadProvider() {
         $data = array('foo'=>'bar', 'category'=>12);
         
-        // create a new database record
-        $result = $this->test_table->create($data);
-        
-        // this should return a GrubbyResult, with affected_rows and insert_id
-        $this->assertType('GrubbyResult', $result);
-        $this->assertEquals(1, $result->affected_rows);
-        $this->assertGreaterThan(0, $result->insert_id);
-        
-        // read the new record back using the insert id
-        $read = $this->test_table->read($result->insert_id);
-        
-        // this should mostly equal the original data array
-        foreach ($data as $key => $value) {
-            $this->assertEquals($value, $read[$key]);
-        }
-    }
-    
-    /**
-     * Create a record and read it back.
-     * Create returns a GrubbyResult: affected_rows = 1 and insert_id = the last auto increment id.
-     */
-    public function testCreateAndReadObject() {
-        $data = array('foo'=>'bar', 'category'=>12);
         $object = new stdClass;
         foreach ($data as $key=>$value) {
             $object->$key = $value;
         }
         
-        // create a new database record
-        $result = $this->test_table->create($object);
+        $fat_array = $data;
+        $fat_array['not_a_field'] = 'whatever';
         
-        // this should return a GrubbyResult, with affected_rows and insert_id
+        $fat_object = new stdClass;
+        foreach ($fat_array as $key=>$value) {
+            $fat_object->$key = $value;
+        }
+        
+        return array(
+            array($data),        // create a record from an array
+            array($object),      // create a record from an object
+            array($fat_array),   // use an array with extra non-table data
+            array($fat_object),  // use an object with extra non-table data
+            );
+    }
+    
+    /**
+     * Create a new record,
+     * read it back and compare.
+     * @dataProvider createAndReadProvider
+     */
+    public function testCreateAndRead($new) {
+        // create a new database record
+        $result = $this->test_table->create($new);
+        
+        // this should return a GrubbyResult,
+        // with affected_rows = 1 and the auto-increment insert_id
         $this->assertType('GrubbyResult', $result);
         $this->assertEquals(1, $result->affected_rows);
         $this->assertGreaterThan(0, $result->insert_id);
         
-        // read the new record back using the insert id
+        // read the new record back using the insert_id
         $read = $this->test_table->read($result->insert_id);
         
-        // this should mostly equal the original data array
-        foreach ($data as $key => $value) {
-            $this->assertEquals($value, $read[$key]);
+        // compare the create against the read data
+        foreach ($new as $key => $value) {
+            // only test values that have corresponding fields
+            if ($this->schemaField($key)) {
+                $this->assertEquals($value, $read[$key]);
+            }
         }
     }
     
     /**
-     * Create a record using an array with extra values beyond the fields in the table.
-     */
-    public function testCreateFromOverstuffedArray() {
-        $data = array('foo'=>'bar', 'category'=>1, 'something_that_cant_possibly_be_there'=>'nothing_that_matters_anyway');
-        $result = $this->test_table->create($data);
-    }
-    
-    /**
-     * Read multiple rows at once by providing an array of their primary keys.
-     * @expectedException GrubbyException
-     */
-    public function testReadMultiplePKs() {
-        $slice = array_slice($this->initial_data, 2, 3);
-        $this->assertGreaterThan(2, count($slice));  // sanity check
-        $pks = array();
-        foreach ($slice as $row) {
-            $pks[] = $row['id'];
-        }
-        
-        // read a set of rows from the table using their primary keys
-        $result = $this->test_table->read($pks);
-        $all = $result->fetchAll();
-        
-        // compare the set to the original data slice
-        $this->assertEquals($slice, $all);
-    }
-    
-    /**
-     * Read all database records.
+     * Read all records,
+     * and compare against the initial data.
      */
     public function testReadAll() {
         $result = $this->test_table->read();
@@ -188,95 +186,200 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     }
     
     /**
-     * Read database records using a simple filter.
+     * Read tests using various filters (filter, expected result).
+     * @return array
+     * @see testReadFilter
      */
-    public function testReadFilter() {
-        foreach ($this->initial_data as $row) {
-            // read a record by its 'foo' value
-            // NOTE: foo values must be unique or this test will not work
-            $result = $this->test_table->read(array('foo'=>$row['foo']));
-            $fetch = $result->fetch();
-            $this->assertEquals($row, $fetch);
-        }
-    }
-    
-    /**
-     * An empty filter value should evaluate to the empty set.
-     * NOTE: This is in contrast to no filter, which evaluates to the full set.
-     */
-    public function testReadEmptyFilter() {
-        $all = $this->test_table->read(array())->fetchAll();
-        $this->assertEquals(array(), $all);
+    public function readFilterProvider() {
+        $tests = array();
         
-        // null was causing the internal error to be thrown
-        $all = $this->test_table->read(null)->fetchAll();
-        $this->assertEquals(array(), $all);
-    }
-    
-    /**
-     * The not filter negates the entire filter.
-     * 
-     * not(42)  // everything except the record with primary key 42
-     * not(array('category'=>1, 'from'=>'joe'))  // Everything without category 1 AND from='joe'
-     */
-    public function testReadNotFilter() {
-        $compare = array();
+        // find rows with a specific foo value
+        $foos = array();
         foreach ($this->initial_data as $row) {
-            if (!($row['category']==1 && $row['from']=='joe')) {
-                $compare[] = $row;
+            $foo = $row['foo'];
+            if (!$foos[$foo]) {
+                $foos[$foo] = true;
+                $filter = array('foo'=>$foo);
+                $expected = array();
+                foreach ($this->initial_data as $result) {
+                    if ($result['foo'] === $foo) {
+                        $expected[] = $result;
+                    }
+                }
+                $tests[] = array($filter, $expected);
             }
         }
-        $all = $this->test_table->not(array('category'=>1, 'from'=>'joe'))->read()->fetchAll();
-        $this->assertEquals($compare, $all);
+        
+        // boolean filters
+        $tests[] = array(false, array());             // filter false equals the empty set
+        $tests[] = array(true, $this->initial_data);  // filter true equals the full set
+        
+        // compound filters
+        foreach ($this->initial_data as $model) {
+            $category = $model['category'];
+            $from = $model['from'];
+            $expected = array();
+            foreach ($this->initial_data as $row) {
+                if (($row['category'] == $category && $row['from'] == $from)) {
+                    $expected[] = $row;
+                }
+            }
+            $tests[] = array(array('category'=>$category, 'from'=>$from), $expected);
+        }
+        
+        // empty filters; these are considered errors and return the empty set
+        $tests[] = array(null, array());
+        $tests[] = array(array(), array());
+        
+        return $tests;
     }
     
     /**
-     * Not empty filter is assumed to be a mistake and should return the empty set.
+     * Read all records that satisfy a filter,
+     * and compare them to the set of expected records.
+     * @dataProvider readFilterProvider
      */
-    public function testReadNotEmptyFilter() {
-        $read = $this->test_table->not(null)->read()->fetchAll();
-        $this->assertEquals(array(), $read);
+    public function testReadFilter($filter, $expected) {
+        $result = $this->test_table->read($filter);
+        $fetch = $result->fetchAll();
+        $this->assertEquals($expected, $fetch);
     }
     
     /**
-     * Not nothing is not allowed. Either filter or don't filter, but don't call not with no argument.
-    public function testReadNotNothingFilter() {
-        $read = $this->test_table->not()->read()->fetchAll();
-        $this->assertEquals(array(), $read);
-    }
+     * Read tests using various not filters (not filter, expected results).
+     * @return array
+     * @see testReadNotFilter
      */
-    
-    public function testFilterExpression() {
-        $all = $this->test_table->filterExpression('category=1')->read()->fetchAll();
+    public function readNotFilterProvider() {
+        $tests = array();
         
+        // rows with other than a certain primary key
         foreach ($this->initial_data as $row) {
-            if ($row['category'] == 1) {
-                $cat1[] = $row;
+            $id = $row['id'];
+            $expected = array();
+            foreach ($this->initial_data as $result) {
+                if ($result['id'] != $id) {
+                    $expected[] = $result;
+                }
+            }
+            $tests[] = array($id, $expected);
+        }
+        
+        // rows of other than a specific category
+        $cats = array();
+        foreach ($this->initial_data as $row) {
+            $category = $row['category'];
+            if (!$cats[$category]) {
+                $cats[$category] = true;
+                $filter = array('category'=>$category);
+                $expected = array();
+                foreach ($this->initial_data as $result) {
+                    if ($result['category'] !== $category) {
+                        $expected[] = $result;
+                    }
+                }
+                $tests[] = array($filter, $expected);
             }
         }
-        $this->assertEquals($cat1, $all);
+        
+        // boolean filters
+        $tests[] = array(false, $this->initial_data);  // not false produces the full set
+        $tests[] = array(true, array());               // not true produces the empty set
+        
+        // compound not filters
+        foreach ($this->initial_data as $model) {
+            $category = $model['category'];
+            $from = $model['from'];
+            $expected = array();
+            foreach ($this->initial_data as $row) {
+                if (!($row['category'] == $category && $row['from'] == $from)) {
+                    $expected[] = $row;
+                }
+            }
+            $tests[] = array(array('category'=>$category, 'from'=>$from), $expected);
+        }
+        
+        // empty filters; these are considered errors and return the empty set
+        $tests[] = array(null, array());
+        $tests[] = array(array(), array());
+        
+        return $tests;
     }
     
-    public function testFilterExpressionWildcard() {
-        $category = 1;
-        $all = $this->test_table->filterExpression('category=?', $category)->read()->fetchAll();
+    /**
+     * The not filter limits the result set to rows not satisfying the filter.
+     * @dataProvider readNotFilterProvider
+     */
+    public function testReadNotFilter($filter, $expected) {
+        $query = $this->test_table->not($filter);
+        $all = $query->read()->fetchAll();
+        $this->assertEquals($expected, $all);
+    }
+    
+    /**
+     * Read tests using an expression for filtering.
+     * @return array
+     * @see testFilterExpression
+     */
+    public function filterExpressionProvider() {
+        $tests = array();
         
+        // id range tests
+        $expected = array();
         foreach ($this->initial_data as $row) {
-            if ($row['category'] == $category) {
-                $cat_set[] = $row;
+            if ($row['id'] < 20) {
+                $expected[] = $row;
             }
         }
-        $this->assertEquals($cat_set, $all);
+        $tests[] = array('id < 20', null, $expected);
+        $tests[] = array('id < ?', 20, $expected);
+        $tests[] = array('id < ?', array(20), $expected);
+        
+        // foo like test
+        $expected = array();
+        foreach ($this->initial_data as $row) {
+            if ($row['foo'][0] == 'S') {
+                $expected[] = $row;
+            }
+        }
+        $tests[] = array('foo LIKE ?', 'S%', $expected);
+        
+        return $tests;
     }
     
-    public function testReadSlice() {
-        $offset = 0;
-        $count = 3;
-        $slice = array_slice($this->initial_data, $offset, $count);
-        
-        $all = $this->test_table->slice($offset, $count)->read()->fetchAll();
-        
-        $this->assertEquals($slice, $all);
+    /**
+     * The filter expression limits the set to records matching a custom SQL expression.
+     * @dataProvider filterExpressionProvider
+     */
+    public function testFilterExpression($expression, $wildcards, $expected) {
+        $query = $this->test_table->filterExpression($expression, $wildcards);
+        $all = $query->read()->fetchAll();
+        $this->assertEquals($expected, $all);
+    }
+    
+    /**
+     * Reads slicing a subset of records out of the query.
+     * @return array
+     * @see testReadSlice
+     */
+    public function readSliceProvider() {
+        $tests = array();
+        $tests[] = array(0, 3);
+        $tests[] = array(1, 1);
+        $tests[] = array(10, 10);
+        $tests[] = array(1, 100);
+        return $tests;
+    }
+    
+    /**
+     * The slice method limits the set to a subset or chunk of the full set.
+     * @dataProvider readSliceProvider
+     */
+    public function testReadSlice($offset, $count) {
+        $expected = array_slice($this->initial_data, $offset, $count);
+        $query = $this->test_table->slice($offset, $count);
+        $all = $query->read()->fetchAll();
+        $this->assertEquals($expected, $all);
     }
     
     /**
@@ -565,6 +668,10 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($found);
     }
     
+    /**
+     * Create a new schema with 'class' set.
+     * 
+     */
     public function testObjectRead() {
         $object_schema = $this->test_schema;
         $object_schema['class'] = 'stdClass';

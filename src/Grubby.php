@@ -322,6 +322,10 @@ class GrubbyQuery {
     public function aggregate($fields) {
         return new GrubbyQueryModifier($this, array('aggregate'=>$fields));
     }
+    
+    public function join($query, $on) {
+        return new GrubbyQueryModifier($this, array('join'=>array($query, $on)));
+    }
 }
 
 /*
@@ -424,14 +428,16 @@ class GrubbyFilter {
      * 
      */
     private function buildExpression() {
-        if (empty($this->filter)) {
+        if ($this->filter === false) {
+            $this->empty = false;
+            $this->expression = 'FALSE';
+        } elseif ($this->filter === true) {
+            $this->empty = false;
+            $this->expression = 'TRUE';
+        } elseif (empty($this->filter)) {
             // empty set
             $this->empty = true;
             $this->expression = 'FALSE';
-        } elseif ($this->filter === true) {
-            // full set
-            $this->empty = false;
-            $this->expression = true;
         } elseif (is_array($this->filter)) {
             // expression of field=>value equalities
             $this->empty = false;
@@ -594,8 +600,17 @@ class GrubbyTable extends GrubbyQuery {
         // FIELDS
         $fields = $this->buildFieldList($query);
         
+        // JOINS
+        if (isset($query['join'])) {
+            $join = ' JOIN '.$query['join'][0]->info['name'].' USING ('.$query['join'][1].')';
+        } else {
+            $join = '';
+        }
+        
         // WHERE clause
-        $query['filters'][] = new GrubbyFilter($query['read']);
+        if ($query['read'] !== true) {
+            $query['filters'][] = new GrubbyFilter($query['read']);
+        }
         $where = $this->buildWhereClause($query);
         
         // GROUP BY clause
@@ -622,7 +637,7 @@ class GrubbyTable extends GrubbyQuery {
             $limit = ' LIMIT '.($query['slice']['offset'] ? $query['slice']['offset'].',' : '').$limit;
         }
         
-        $sql = 'SELECT '.$fields.' FROM `'.$this->info['name'].'`'.$where.$group.$order.$limit;
+        $sql = 'SELECT '.$fields.' FROM `'.$this->info['name'].'`'.$join.$where.$group.$order.$limit;
         $result = $this->info['database']->query($sql);
         $result->setObjectType($this->info['class']);
         if ($first) {
@@ -825,13 +840,12 @@ class GrubbyTable extends GrubbyQuery {
     public function createTable() {
         $column_sql = array();
         foreach ($this->info['fields'] as $column) {
-            $pk = ($this->info['primary_key'] == $column['name']);
             $type = isset($column['type']) ? $column['type'] : INT;
             
             if (isset($column['null'])) {
                 $null = (bool)$column['null'];  // manual setting
             } else {
-                $null = $pk ? false : true;     // primary key fields assume not null, others assume null
+                $null = true;
             }
             
             if (isset($column['size'])) {
@@ -846,9 +860,16 @@ class GrubbyTable extends GrubbyQuery {
                     (isset($column['character_set']) ? ' CHARACTER SET '.$column['character_set'] : '').
                     (isset($column['collate']) ? ' COLLATE '.$column['collate'] : '').
                     ($null ? ' NULL' : ' NOT NULL').
-                    (isset($column['default']) ? ' DEFAULT '.$info['database']->table($info['name'])->formatFieldValue($column['name'], $column['default']) : '').
-                    (isset($column['auto_increment']) && $column['auto_increment'] ? ' AUTO_INCREMENT' : '').
-                    ($pk ? ' PRIMARY KEY' : '');
+                    (isset($column['default']) ? ' DEFAULT '.$this->info['database']->formatInt($column['default']) : '').
+                    (isset($column['auto_increment']) && $column['auto_increment'] ? ' AUTO_INCREMENT' : '');
+        }
+        if (!empty($this->info['primary_key'])) {
+            if (is_array($this->info['primary_key'])) {
+                $pk = implode(',', $this->info['primary_key']);
+            } else {
+                $pk = $this->info['primary_key'];
+            }
+            $column_sql[] = 'PRIMARY KEY ('.$pk.')';
         }
         $sql = 'CREATE TABLE `'.$this->info['name']."` (\n    ".implode(",\n    ", $column_sql).')';
         return $this->info['database']->execute($sql);

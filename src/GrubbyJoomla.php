@@ -133,6 +133,7 @@ class GrubbyJoomlaResult extends GrubbyResult {
      */
     public function __construct($result, $jdatabase) {
         $this->affected_rows = $jdatabase->getAffectedRows();
+        $this->insert_id = $jdatabase->insertid();
     }
 }
 

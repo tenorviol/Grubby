@@ -11,5 +11,5 @@ phpunit GrubbyTest.php
 echo -e "\n_____GrubbyDatabaseTest using config-db.php_________________________"
 phpunit --bootstrap config-db.php GrubbyDatabaseTest.php
 
-echo -e "\n_____GrubbyDatabaseTest using config-db.php_________________________"
+echo -e "\n_____GrubbyDatabaseTest using config-jooml.php_________________________"
 phpunit --bootstrap config-joomla.php GrubbyDatabaseTest.php
