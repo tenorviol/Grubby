@@ -44,12 +44,6 @@
         </tar>
         
         <delete dir="./build"/>
-        
-        <echo message="Uploading ${build.file} to grubbycrud.com"/>
-        <exec executable="scp">
-            <arg value="${build.file}"/>
-            <arg value="tenorviol@grubbycrud.com:grubbycrud.com/downloads/"/>
-        </exec>
     </target>
     
 </project>
