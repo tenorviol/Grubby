@@ -1,0 +1,50 @@
+Grubby : Quick & Dirty CRUD
+
+Author: Christopher Johnson
+License: MIT
+
+OVERVIEW
+
+Grubby is designed to simplify querying a database by replacing most of
+the raw SQL with a programmatic interface. The library is based on two
+main considerations. First, a clear and concise syntax allows for
+bigger, more complex applications. And second, errors should degrade to
+less destructive operations and be easy to track down.
+
+EXAMPLES
+
+___ Basic Crud ___
+
+$table->create(array('cat'=>3, 'foo'=>'bar'));  // insert a new row
+
+$table->read(42);               // select row with primary key 42
+$table->read(array('cat'=>3));  // select all rows where cat=3
+
+$table->update(array('id'=>42, 'cat'=>5));  // update where id=42 set cat=5
+$table->all()->update(array('cat'=>7));     // update all rows set cat=7
+
+$table->delete(42);                      // delete row 42
+$table->all()->delete(array('cat'=>3));  // delete all rows where cat=3
+
+
+___ Filtering ___
+
+$subset = $table->filter(array('cat'=>3'));  // all rows with cat=3
+
+$subset->create(array('foo'=>'bar'));  // insert a new row, set cat=3
+
+$subset->read(42);  // select row 42, only if cat=3
+$subset->read();    // select all rows where cat=3
+
+$subset->update(array('id'=>42, 'cat'=>5));  // update where id=42 AND cat=3 set cat=5
+$subset->all()->update(array('cat'=>7));     // update where cat=3 set cat=7
+
+$subset->delete(42);       // delete row 42, only if cat=3
+$subset->all()->delete();  // delete all rows where cat=3
+
+
+___ Compound filtering ___
+
+$subsubset = $subset->not(array('created'=>null));
+
+and so on...
