@@ -446,11 +446,11 @@ class GrubbyFilter {
                 if (is_int($field)) {
                     throw new GrubbyException('Filter arrays can only contain column=>value pairings.');
                 } elseif (is_null($value)) {
-                    $where[] = '`'.$field.'` IS NULL';
+                    $where[] = $field.' IS NULL';
                 } elseif (is_array($value)) {
                     throw new GrubbyException('Array filter values not implemented yet.');
                 } else {
-                    $where[] = '`'.$field.'`='.$this->table->formatFieldValue($field, $value);
+                    $where[] = $field.'='.$this->table->formatFieldValue($field, $value);
                 }
             }
             $this->expression = implode(' AND ', $where);
@@ -458,7 +458,7 @@ class GrubbyFilter {
             // scalar; match against the primary key
             $pk = $this->table->primaryKey();
             if (is_scalar($pk)) {
-                $this->expression = '`'.$pk.'`='.$this->table->formatFieldValue($pk, $this->filter);
+                $this->expression = $pk.'='.$this->table->formatFieldValue($pk, $this->filter);
             } else {
                 throw new GrubbyException('Multi-column primary keys cannot use shorthand pk notation.');
             }
@@ -560,26 +560,26 @@ class GrubbyTable extends GrubbyQuery {
             foreach ($this->info['fields'] as $field) {
                 $name = $field['name'];
                 if ($field['auto'] == GRUBBY_AUTO_CREATE_DATE || $field['auto'] == GRUBBY_AUTO_UPDATE_DATE) {
-                    $fields[] = '`'.$name.'`';
+                    $fields[] = $name;
                     $values[] = 'NOW()';
                 } elseif ($field['auto'] == GRUBBY_AUTO_CREATE_REMOTE_ADDR || $field['auto'] == GRUBBY_AUTO_UPDATE_REMOTE_ADDR) {
-                    $fields[] = '`'.$name.'`';
+                    $fields[] = $name;
                     $values[] = $this->info['database']->formatString($_SERVER['REMOTE_ADDR']);
                 } elseif (is_array($data) && isset($data[$name])) {
-                    $fields[] = '`'.$name.'`';
+                    $fields[] = $name;
                     $values[] = $this->info['database']->formatString($data[$name]);
                 } elseif (isset($data->$name)) {
-                    $fields[] = '`'.$name.'`';
+                    $fields[] = $name;
                     $values[] = $this->info['database']->formatString($data->$name);
                 }
             }
         } else {
             foreach ($data as $key => $value) {
-                $fields[] = '`'.$key.'`';
+                $fields[] = $key;
                 $values[] = $this->info['database']->formatString($value);
             }
         }
-        $sql = 'INSERT INTO `'.$this->info['name'].'` ('.implode(',',$fields).') VALUES ('.implode(',',$values).')';
+        $sql = 'INSERT INTO '.$this->info['name'].' ('.implode(',',$fields).') VALUES ('.implode(',',$values).')';
         $result = $this->info['database']->execute($sql);
         if ($result->affected_rows == 1) {
             $result->insert_id = $this->info['database']->lastInsertID();
@@ -637,7 +637,7 @@ class GrubbyTable extends GrubbyQuery {
             $limit = ' LIMIT '.($query['slice']['offset'] ? $query['slice']['offset'].',' : '').$limit;
         }
         
-        $sql = 'SELECT '.$fields.' FROM `'.$this->info['name'].'`'.$join.$where.$group.$order.$limit;
+        $sql = 'SELECT '.$fields.' FROM '.$this->info['name'].$join.$where.$group.$order.$limit;
         $result = $this->info['database']->query($sql);
         $result->setObjectType($this->info['class']);
         if ($first) {
@@ -688,7 +688,7 @@ class GrubbyTable extends GrubbyQuery {
             }
         }
         foreach ($changes as $field => $change) {
-            $changes[$field] = "`$field`=$change";
+            $changes[$field] = "$field=$change";
         }
         $change = implode(', ', $changes);
         
@@ -699,7 +699,7 @@ class GrubbyTable extends GrubbyQuery {
             throw new GrubbyException('Bulk updates must be accompanied by an all() qualifier.');
         }
         
-        $sql = 'UPDATE `'.$this->info['name'].'` SET '.$change.$where;
+        $sql = 'UPDATE '.$this->info['name'].' SET '.$change.$where;
         $result = $this->info['database']->execute($sql);
         return $result;
     }
@@ -718,7 +718,7 @@ class GrubbyTable extends GrubbyQuery {
         $query['filters'][] = new GrubbyFilter($query['delete']); // delete contains a filter
         $where = $this->buildWhereClause($query);
         
-        $sql = 'DELETE FROM `'.$this->info['name'].'`'.$where;
+        $sql = 'DELETE FROM '.$this->info['name'].$where;
         $result = $this->info['database']->execute($sql);
         return $result;
     }
@@ -856,7 +856,7 @@ class GrubbyTable extends GrubbyQuery {
                 unset($size);
             }
             
-            $column_sql[] = '`'.$column['name'].'` '.$type.(isset($size) ? '('.$size.')' : '').
+            $column_sql[] = $column['name'].' '.$type.(isset($size) ? '('.$size.')' : '').
                     (isset($column['character_set']) ? ' CHARACTER SET '.$column['character_set'] : '').
                     (isset($column['collate']) ? ' COLLATE '.$column['collate'] : '').
                     ($null ? ' NULL' : ' NOT NULL').
@@ -871,7 +871,7 @@ class GrubbyTable extends GrubbyQuery {
             }
             $column_sql[] = 'PRIMARY KEY ('.$pk.')';
         }
-        $sql = 'CREATE TABLE `'.$this->info['name']."` (\n    ".implode(",\n    ", $column_sql).')';
+        $sql = 'CREATE TABLE '.$this->info['name']." (\n    ".implode(",\n    ", $column_sql).')';
         return $this->info['database']->execute($sql);
     }
     
@@ -880,7 +880,7 @@ class GrubbyTable extends GrubbyQuery {
      * @return unknown_type
      */
     public function dropTable() {
-        $sql = 'DROP TABLE IF EXISTS `'.$this->info['name'].'`';
+        $sql = 'DROP TABLE IF EXISTS '.$this->info['name'];
         return $this->info['database']->execute($sql);
     }
 }

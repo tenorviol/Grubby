@@ -18,4 +18,5 @@ notExpression(expression [, wildcard(s)])
 Create on duplicate Update. Example: $table->createUpdate($create_array, $update_array);  // one or other
     This overcomplicates the library. Look into databases that support this feature. Look for an elegant way to support it.
     
-    
+Remove automatic back ticks. They can be done manually by the person setting up the table,
+    and they take away the ability to accesss secondary databases.

@@ -24,17 +24,17 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
                                     array('name'=>'id',       'type'=>'INT', 'auto_increment'=>true),
                                     array('name'=>'foo',      'type'=>'VARCHAR'),
                                     array('name'=>'category', 'type'=>'INT'),
-                                    array('name'=>'from',     'type'=>'VARCHAR'),                                ),
+                                    array('name'=>'name',     'type'=>'VARCHAR'),                                ),
                             );
     
     // Data for pre-populating grubby_test
     private $initial_data = array(
-                                array('id'=>1,  'foo'=>'Spew',         'category'=>1, 'from'=>'serius'),
-                                array('id'=>2,  'foo'=>'Chunks',       'category'=>2, 'from'=>'john'),
-                                array('id'=>6,  'foo'=>'But Outdoors', 'category'=>2, 'from'=>'serius'),
-                                array('id'=>7,  'foo'=>'See Chris\'s Tests...\\', 'category'=>1, 'from'=>'john'),
-                                array('id'=>27, 'foo'=>null,           'category'=>1, 'from'=>'alex'),
-                                array('id'=>28, 'foo'=>'',             'category'=>2, 'from'=>'meyers'),
+                                array('id'=>1,  'foo'=>'Spew',         'category'=>1, 'name'=>'serius'),
+                                array('id'=>2,  'foo'=>'Chunks',       'category'=>2, 'name'=>'john'),
+                                array('id'=>6,  'foo'=>'But Outdoors', 'category'=>2, 'name'=>'serius'),
+                                array('id'=>7,  'foo'=>'See Chris\'s Tests...\\', 'category'=>1, 'name'=>'john'),
+                                array('id'=>27, 'foo'=>null,           'category'=>1, 'name'=>'alex'),
+                                array('id'=>28, 'foo'=>'',             'category'=>2, 'name'=>'meyers'),
                                 );
     
     /**
@@ -85,12 +85,12 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      */
     public function filterTestProvider() {
         return array(
-            array(42, '`id`=\'42\''),
+            array(42, 'id=\'42\''),
             array(array(), 'FALSE'),
             array(false, 'FALSE'),
             array(true, true),
-            array(array('foo'=>'bar'), '`foo`=\'bar\''),
-            array(array('foo'=>'bar', 'chunk'=>'down'), '`foo`=\'bar\' AND `chunk`=\'down\''),
+            array(array('foo'=>'bar'), 'foo=\'bar\''),
+            array(array('foo'=>'bar', 'chunk'=>'down'), 'foo=\'bar\' AND chunk=\'down\''),
         );
     }
     
@@ -217,14 +217,14 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         // compound filters
         foreach ($this->initial_data as $model) {
             $category = $model['category'];
-            $from = $model['from'];
+            $name = $model['name'];
             $expected = array();
             foreach ($this->initial_data as $row) {
-                if (($row['category'] == $category && $row['from'] == $from)) {
+                if (($row['category'] == $category && $row['name'] == $name)) {
                     $expected[] = $row;
                 }
             }
-            $tests[] = array(array('category'=>$category, 'from'=>$from), $expected);
+            $tests[] = array(array('category'=>$category, 'name'=>$name), $expected);
         }
         
         // empty filters; these are considered errors and return the empty set
@@ -289,14 +289,14 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         // compound not filters
         foreach ($this->initial_data as $model) {
             $category = $model['category'];
-            $from = $model['from'];
+            $name = $model['name'];
             $expected = array();
             foreach ($this->initial_data as $row) {
-                if (!($row['category'] == $category && $row['from'] == $from)) {
+                if (!($row['category'] == $category && $row['name'] == $name)) {
                     $expected[] = $row;
                 }
             }
-            $tests[] = array(array('category'=>$category, 'from'=>$from), $expected);
+            $tests[] = array(array('category'=>$category, 'name'=>$name), $expected);
         }
         
         // empty filters; these are considered errors and return the empty set
