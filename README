@@ -13,7 +13,7 @@ less destructive operations and be easy to track down.
 
 EXAMPLES
 
-___ Basic Crud ___
+___Basic Crud___
 
 $table->create(array('cat'=>3, 'foo'=>'bar'));  // insert a new row
 
@@ -27,7 +27,7 @@ $table->delete(42);                      // delete row 42
 $table->all()->delete(array('cat'=>3));  // delete all rows where cat=3
 
 
-___ Filtering ___
+___Filtering___
 
 $subset = $table->filter(array('cat'=>3'));  // all rows with cat=3
 
@@ -43,8 +43,14 @@ $subset->delete(42);       // delete row 42, only if cat=3
 $subset->all()->delete();  // delete all rows where cat=3
 
 
-___ Compound filtering ___
+___Compound filtering___
 
 $subsubset = $subset->not(array('created'=>null));
 
-and so on...
+And so on...
+
+
+___Slicing and sorting___
+
+// select the first 10 records sorted by name ascending
+$subsubset->sort('name')->slice(0, 10)->read();
