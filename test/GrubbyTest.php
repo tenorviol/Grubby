@@ -11,7 +11,6 @@
  */
 
 require_once dirname(__FILE__).'/config.php';
-require_once GRUBBY_ROOT.'/GrubbyDataObject.php';
 
 class GrubbyTest extends PHPUnit_Framework_TestCase {
     
@@ -57,7 +56,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      */
     public function setUp() {
     	$this->test_schema['database'] = $GLOBALS['database'];
-        $this->test_table = new GrubbyTable($this->test_schema);
+        $this->test_table = new Grubby_Table($this->test_schema);
         
         $this->test_table->dropTable();
         $this->test_table->createTable();
@@ -72,10 +71,10 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      * Drop the grubby_test table.
      */
     public function tearDown() {
-        $this->test_table->dropTable();
+        //$this->test_table->dropTable();
     }
     
-    ////////// GrubbyFilter TESTS //////////
+    ////////// Grubby_Filter TESTS //////////
     
     /**
      * Filter tests.
@@ -98,14 +97,14 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      * Create a new filter and check that the resulting sql is as expected.
      * @dataProvider filterTestProvider
      */
-    public function testGrubbyFilter($filter, $expected) {
-        $filter = new GrubbyFilter($filter);
+    public function testGrubby_Filter($filter, $expected) {
+        $filter = new Grubby_Filter($filter);
         $filter->setTable($this->test_table);
         $expression = $filter->getExpression();
         $this->assertEquals($expected, $expression);
     }
     
-    ////////// GrubbyTable TESTS //////////
+    ////////// Grubby_Table TESTS //////////
     
     /**
      * Read a single record by its primary key value.
@@ -157,9 +156,9 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         // create a new database record
         $result = $this->test_table->create($new);
         
-        // this should return a GrubbyResult,
+        // this should return a Grubby_Result,
         // with affected_rows = 1 and the auto-increment insert_id
-        $this->assertType('GrubbyResult', $result);
+        $this->assertType('Grubby_Result', $result);
         $this->assertEquals(1, $result->affected_rows);
         $this->assertGreaterThan(0, $result->insert_id);
         
@@ -418,7 +417,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      * Why? It is a terrible thing when a programmer mistake turns into a full table rewrite.
      * Multi-row updates must be explicitly stated as such (see testUpdateAll).
      * @see testUpdateAll
-     * @expectedException GrubbyException
+     * @expectedException Grubby_Exception
      */
     public function testUpdateAllError() {
         $this->test_table->update(array('foo'=>'bar'));
@@ -509,7 +508,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     
     /**
      * People cannot be allowed to delete their entire table as if by accident.
-     * @expectedException GrubbyException
+     * @expectedException Grubby_Exception
      */
     public function testDeleteAllError() {
         $this->test_table->delete();
@@ -675,7 +674,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     public function testObjectRead() {
         $object_schema = $this->test_schema;
         $object_schema['class'] = 'stdClass';
-        $table = new GrubbyTable($object_schema);
+        $table = new Grubby_Table($object_schema);
         
         $set = $table->read();
         
@@ -702,10 +701,10 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         }
     }
     
-    public function testGrubbyDataObject() {
+    public function testGrubby_DataObject() {
         $object_schema = $this->test_schema;
         $object_schema['class'] = 'TestDataObject';
-        $table = new GrubbyTable($object_schema);
+        $table = new Grubby_Table($object_schema);
         TestDataObject::$grubby_query = $table;
         
         // read an object;
@@ -789,7 +788,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testTableNameRead() {
-        $table = new GrubbyTable(array('name'=>$this->test_schema['name'], 'database'=>$this->test_schema['database']));
+        $table = new Grubby_Table(array('name'=>$this->test_schema['name'], 'database'=>$this->test_schema['database']));
         $all = $table->read()->fetchAll();
         $this->assertEquals($this->initial_data, $all);
     }
@@ -808,7 +807,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
         
         // drop and recreate the table
-        $table = new GrubbyTable($schema);
+        $table = new Grubby_Table($schema);
         $table->dropTable();
         $table->createTable();
         
@@ -863,7 +862,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     }
 }
 
-class TestDataObject extends GrubbyDataObject {
+class TestDataObject extends Grubby_DataObject {
     
     public static $grubby_query;  // to be set by the test
     public function grubbyQuery() {

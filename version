@@ -1,5 +1,5 @@
 # This version number will be copied into each release during the ant build.
 # The version number must be set manually.
 version.major=0
-version.minor=2
-version.build=7
+version.minor=3
+version.build=0

@@ -1,12 +1,9 @@
 <?php
 
-// the location of the Grubby library
-define('GRUBBY_ROOT', realpath(dirname(__FILE__).'/../src'));
+require_once 'autoload.php';
+require_once 'MDB2.php';
 
-require_once GRUBBY_ROOT.'/Grubby.php';
-require_once GRUBBY_ROOT.'/GrubbyMDB2.php';
-
-$GLOBALS['database'] = new GrubbyMDB2(array('phptype' => 'mysql',
+$GLOBALS['database'] = new Grubby_MDB2_Database(array('phptype' => 'mysql',
                                             'protocol' => 'unix',
                                             'socket' => '/tmp/mysql.sock',
                                             'username' => 'foo',

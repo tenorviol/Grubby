@@ -34,16 +34,16 @@ class GrubbyDatabaseTest extends PHPUnit_Framework_TestCase {
         // select the grubby_test table
         $result = $database->query('SELECT 42 AS forty_two');
         
-        // this should return a GrubbyRecordset
-        $this->assertType('GrubbyRecordset', $result);
+        // this should return a Grubby_Recordset
+        $this->assertType('Grubby_Recordset', $result);
         
         $row = $result->fetch();
         $this->assertEquals(42, $row['forty_two']);
     }
     
     /**
-     * Buggy SQL throws a GrubbyException.
-     * @expectedException GrubbyException
+     * Buggy SQL throws a Grubby_Exception.
+     * @expectedException Grubby_Exception
      */
     public function testQueryError() {
         $database = $GLOBALS['database'];
@@ -64,12 +64,12 @@ class GrubbyDatabaseTest extends PHPUnit_Framework_TestCase {
         
         // create a temporary table foo
         $result = $database->execute('CREATE TEMPORARY TABLE foo (bar INT)');
-        $this->assertType('GrubbyResult', $result);
+        $this->assertType('Grubby_Result', $result);
         
         $data = array(mt_rand(), mt_rand(), mt_rand());
         
         $result = $database->execute('INSERT INTO foo (bar) VALUES ('.implode('),(', $data).')');
-        $this->assertType('GrubbyResult', $result);
+        $this->assertType('Grubby_Result', $result);
         $this->assertEquals(count($data), $result->affected_rows);
         
         // test the table's foo values
@@ -91,8 +91,8 @@ class GrubbyDatabaseTest extends PHPUnit_Framework_TestCase {
     }
     
     /**
-     * Buggy SQL throws a GrubbyException.
-     * @expectedException GrubbyException
+     * Buggy SQL throws a Grubby_Exception.
+     * @expectedException Grubby_Exception
      */
     public function testExecuteError() {
         $database = $GLOBALS['database'];
@@ -108,9 +108,9 @@ class GrubbyDatabaseTest extends PHPUnit_Framework_TestCase {
             array('foo=?', 12, GRUBBY_STRING, 'foo=\'12\''),  // single string wildcard
             array('foo=? OR bar=?', array(1, 2), array(GRUBBY_INT, GRUBBY_STRING), 'foo=1 OR bar=\'2\''),  // two wildcards
             array('foo=\'?\' OR bar=?', 'bar', null, 'foo=\'?\' OR bar=\'bar\''),  // single wildcard with prior string embeded ?
-            array('\'', null, null, new GrubbyException()),  // unterminated string exception
-            array('foo=? OR bar=?', 42, null, new GrubbyException()), // not enough wildcards exception
-            array('foo=? OR bar=?', array(1, 2, 3), null, new GrubbyException()), // too many wildcards exception
+            array('\'', null, null, new Grubby_Exception()),  // unterminated string exception
+            array('foo=? OR bar=?', 42, null, new Grubby_Exception()), // not enough wildcards exception
+            array('foo=? OR bar=?', array(1, 2, 3), null, new Grubby_Exception()), // too many wildcards exception
         );
     }
     
@@ -120,8 +120,8 @@ class GrubbyDatabaseTest extends PHPUnit_Framework_TestCase {
     public function testReplaceWildcards($sql, $wildcards, $types, $expected) {
         $database = $GLOBALS['database'];
         
-        if ($expected instanceof GrubbyException) {
-            $this->setExpectedException('GrubbyException');
+        if ($expected instanceof Grubby_Exception) {
+            $this->setExpectedException('Grubby_Exception');
         }
         $result = $database->replaceWildcards($sql, $wildcards, $types);
         $this->assertEquals($expected, $result);

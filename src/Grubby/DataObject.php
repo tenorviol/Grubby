@@ -10,7 +10,8 @@
  * Licensed under the MIT license (see LICENSE file).
  */
 
-abstract class GrubbyDataObject {
+// TODO: rename to Grubby_Record (evoking ActiveRecord)
+abstract class Grubby_DataObject {
     
     /**
      * Return the GrubbyQuery object used for retrieval and storage of this object.

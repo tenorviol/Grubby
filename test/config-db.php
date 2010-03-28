@@ -1,15 +1,12 @@
 <?php
 
-// the location of the Grubby library
-define('GRUBBY_ROOT', realpath(dirname(__FILE__).'/../src'));
+require_once 'autoload.php';
+require_once 'DB.php';
 
-require_once GRUBBY_ROOT.'/Grubby.php';
-require_once GRUBBY_ROOT.'/GrubbyDB.php';
-
-if ($GLOBALS['database']) {
+if (empty($GLOBALS['database'])) {
     echo basename(__FILE__).': replacing $GLOBALS[\'database\']'."\n";
 }
-$GLOBALS['database'] = new GrubbyDB(array('phptype' => 'mysql',
+$GLOBALS['database'] = new Grubby_DB_Database(array('phptype' => 'mysql',
                                           'protocol' => 'unix',
                                           'socket' => '/tmp/mysql.sock',
                                           'username' => 'foo',
