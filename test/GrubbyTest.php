@@ -56,7 +56,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
      * and populate with the initial data.
      */
     public function setUp() {
-        $this->test_schema['database'] = $GLOBALS['database'];
+    	$this->test_schema['database'] = $GLOBALS['database'];
         $this->test_table = new GrubbyTable($this->test_schema);
         
         $this->test_table->dropTable();
@@ -197,7 +197,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         $foos = array();
         foreach ($this->initial_data as $row) {
             $foo = $row['foo'];
-            if (!$foos[$foo]) {
+            if (empty($foos[$foo])) {
                 $foos[$foo] = true;
                 $filter = array('foo'=>$foo);
                 $expected = array();
@@ -269,7 +269,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         $cats = array();
         foreach ($this->initial_data as $row) {
             $category = $row['category'];
-            if (!$cats[$category]) {
+            if (empty($cats[$category])) {
                 $cats[$category] = true;
                 $filter = array('category'=>$category);
                 $expected = array();
@@ -338,7 +338,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         // foo like test
         $expected = array();
         foreach ($this->initial_data as $row) {
-            if ($row['foo'][0] == 'S') {
+            if (isset($row['foo'][0]) && $row['foo'][0] == 'S') {
                 $expected[] = $row;
             }
         }
@@ -777,7 +777,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         
         $cat_tally = array();
         foreach ($this->initial_data as $row) {
-            $cat_tally[$row['category']]++;
+            @$cat_tally[$row['category']]++;
         }
         $this->assertGreaterThan(0, count($cat_tally));
         $this->assertEquals(count($cat_tally), count($all));

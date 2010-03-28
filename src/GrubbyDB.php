@@ -50,31 +50,9 @@ class GrubbyDB extends GrubbyDatabase {
      * Use for UPDATE, INSERT, DELETE.
      * @return GrubbyDBResult
      */
-    public function execute($sql) {
-        if (Grubby::$debug) {
-            Grubby::debugMessage('Executing: '.$sql);
-        }
-        
-        $start = microtime(true);
-        
+    public function executeImpl($sql) {
         $connection = $this->getConnection();
         $result = $connection->query($sql);
-        
-        $time = microtime(true) - $start;
-        $this->time += $time;
-        Grubby::$time += $time;
-        
-        if (Grubby::$debug) {
-            if (PEAR::isError($result)) {
-                Grubby::debugMessage('Error: '.$result->getMessage());
-            }
-            Grubby::debugMessage('Time: '.number_format($time, 4)." secs");
-        }
-        
-        if (PEAR::isError($result)) {
-            throw new GrubbyException($result->getMessage());
-        }
-        
         return new GrubbyDBResult($result, $connection);
     }
     
@@ -83,31 +61,9 @@ class GrubbyDB extends GrubbyDatabase {
      * Use for SELECT.
      * @return false or a new DB_Result object.
      */
-    public function query($sql) {
-        if (Grubby::$debug) {
-            Grubby::debugMessage('Querying: '.$sql);
-        }
-        
-        $start = microtime(true);
-        
+    public function queryImpl($sql) {
         $connection = $this->getConnection();
         $result = $connection->query($sql);
-        
-        $time = microtime(true) - $start;
-        $this->time += $time;
-        Grubby::$time += $time;
-        
-        if (Grubby::$debug) {
-            if (PEAR::isError($result)) {
-                Grubby::debugMessage('Error: '.$result->getMessage());
-            }
-            Grubby::debugMessage('Time: '.number_format($time, 4)." secs");
-        }
-        
-        if (PEAR::isError($result)) {
-            throw new GrubbyException($result->getMessage());
-        }
-        
         return new GrubbyDBRecordset($this, $result);
     }
     
@@ -142,6 +98,22 @@ class GrubbyDBResult extends GrubbyResult {
         } else {
             $this->affected_rows = $connection->affectedRows();
         }
+    }
+    
+    /**
+     * True if the query resulted in an error.
+     * @return boolean
+     */
+    public function error() {
+        return isset($this->error);
+    }
+    
+    /**
+     * Available when error() is true.
+     * @return string
+     */
+    public function errorMessage() {
+        return $this->error->getMessage();
     }
 }
 
@@ -199,5 +171,21 @@ class GrubbyDBRecordset extends GrubbyRecordset {
      */
     public function fetchColumn($column) {
         return $this->recordset->fetchCol($column);
+    }
+    
+    /**
+     * True if the query resulted in an error.
+     * @return boolean
+     */
+    public function error() {
+        return isset($this->error);
+    }
+    
+    /**
+     * Available when error() is true.
+     * @return string
+     */
+    public function errorMessage() {
+        return $this->error->getMessage();
     }
 }

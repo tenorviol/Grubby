@@ -27,10 +27,10 @@ class Grubby {
     public static $time = 0;
     
     public static function debugMessage($message) {
-        if ($_SERVER['REQUEST_URI']) {
-            print '<div class="grubby debug">'.htmlspecialchars($message).'</div>';
-        } else {
+        if (empty($_SERVER['REQUEST_URI'])) {
             print 'Grubby: '.$message."\n";
+        } else {
+            print '<div class="grubby debug">'.htmlspecialchars($message).'</div>';
         }
     }
 }
@@ -45,14 +45,64 @@ abstract class GrubbyDatabase {
      * I.e. CREATE, UPDATE, DELETE
      * @retun GrubbyResult
      */
-    public abstract function execute($sql);
+    public function execute($sql) {
+        if (Grubby::$debug) {
+            Grubby::debugMessage('Executing: '.$sql);
+        }
+        
+        $start = microtime(true);
+        
+        $result = $this->executeImpl($sql);
+        
+        $time = microtime(true) - $start;
+        $this->time += $time;
+        Grubby::$time += $time;
+        
+        if (Grubby::$debug) {
+            if ($result->error()) {
+                Grubby::debugMessage('Error: '.$result->errorMessage());
+            }
+            Grubby::debugMessage('Time: '.number_format($time, 4)." secs");
+        }
+        
+        if ($result->error()) {
+            throw new GrubbyException($result->errorMessage());
+        }
+        
+        return $result;
+    }
     
     /**
      * Run a SQL query against the database.
      * I.e. SELECT
      * @return GrubbyRecordset
      */
-    public abstract function query($sql);
+    public function query($sql) {
+        if (Grubby::$debug) {
+            Grubby::debugMessage('Querying: '.$sql);
+        }
+        
+        $start = microtime(true);
+        
+        $result = $this->queryImpl($sql);
+        
+        $time = microtime(true) - $start;
+        $this->time += $time;
+        Grubby::$time += $time;
+        
+        if (Grubby::$debug) {
+            if ($result->error()) {
+                Grubby::debugMessage('Error: '.$result->errorMessage());
+            }
+            Grubby::debugMessage('Time: '.number_format($time, 4)." secs");
+        }
+        
+        if ($result->error()) {
+            throw new GrubbyException($result->errorMessage());
+        }
+        
+        return $result;
+    }
     
     /**
      * @return mixed
@@ -136,7 +186,7 @@ abstract class GrubbyDatabase {
                     throw new GrubbyException('Too few wildcards for filter expression.');
                 }
                 $return .= substr($sql, $marker, $i-$marker);
-                $return .= $this->format($wildcards[$wc], $types[$wc]);
+                $return .= $this->format($wildcards[$wc], @$types[$wc]);
                 $marker = $i+1;
                 $wc++;
             } elseif ($sql[$i] == '\'') { // string starting, skip to end
@@ -559,10 +609,10 @@ class GrubbyTable extends GrubbyQuery {
         if (isset($this->info['fields'])) {
             foreach ($this->info['fields'] as $field) {
                 $name = $field['name'];
-                if ($field['auto'] == GRUBBY_AUTO_CREATE_DATE || $field['auto'] == GRUBBY_AUTO_UPDATE_DATE) {
+				if (@$field['auto'] == GRUBBY_AUTO_CREATE_DATE || @$field['auto'] == GRUBBY_AUTO_UPDATE_DATE) {
                     $fields[] = $name;
                     $values[] = 'NOW()';
-                } elseif ($field['auto'] == GRUBBY_AUTO_CREATE_REMOTE_ADDR || $field['auto'] == GRUBBY_AUTO_UPDATE_REMOTE_ADDR) {
+                } elseif (@$field['auto'] == GRUBBY_AUTO_CREATE_REMOTE_ADDR || @$field['auto'] == GRUBBY_AUTO_UPDATE_REMOTE_ADDR) {
                     $fields[] = $name;
                     $values[] = $this->info['database']->formatString($_SERVER['REMOTE_ADDR']);
                 } elseif (is_array($data) && isset($data[$name])) {
@@ -601,10 +651,9 @@ class GrubbyTable extends GrubbyQuery {
         $fields = $this->buildFieldList($query);
         
         // JOINS
+        $join = '';
         if (isset($query['join'])) {
             $join = ' JOIN '.$query['join'][0]->info['name'].' USING ('.$query['join'][1].')';
-        } else {
-            $join = '';
         }
         
         // WHERE clause
@@ -614,14 +663,14 @@ class GrubbyTable extends GrubbyQuery {
         $where = $this->buildWhereClause($query);
         
         // GROUP BY clause
+        $group = '';
         if (isset($query['aggregate'])) {
             $aggregate = is_array($query['aggregate']) ? $query['aggregate'] : array($query['aggregate']);
             $group = ' GROUP BY '.implode(', ', $aggregate);
-        } else {
-            $group = '';
         }
         
         // ORDER BY clause
+        $order = '';
         if (isset($query['sort']) && $query['sort']) {
             $sort = $query['sort'];
             if (is_array($sort)) {
@@ -632,6 +681,7 @@ class GrubbyTable extends GrubbyQuery {
         }
         
         // LIMIT clause
+        $limit = '';
         if (isset($query['slice'])) {
             $limit = $query['slice']['limit'] ? $query['slice']['limit'] : '999999999999999';
             $limit = ' LIMIT '.($query['slice']['offset'] ? $query['slice']['offset'].',' : '').$limit;
@@ -639,8 +689,10 @@ class GrubbyTable extends GrubbyQuery {
         
         $sql = 'SELECT '.$fields.' FROM '.$this->info['name'].$join.$where.$group.$order.$limit;
         $result = $this->info['database']->query($sql);
-        $result->setObjectType($this->info['class']);
-        if ($first) {
+        if (!empty($this->info['class'])) {
+	        $result->setObjectType($this->info['class']);
+        }
+	    if ($first) {
             return $result->fetch();  // Return the first result of the iterator
         } else {
             return $result;
@@ -695,7 +747,7 @@ class GrubbyTable extends GrubbyQuery {
         // WHERE clause
         $where = $this->buildWhereClause($query);
         
-        if (!$pk_bound && !$query['all']) {
+        if (!$pk_bound && empty($query['all'])) {
             throw new GrubbyException('Bulk updates must be accompanied by an all() qualifier.');
         }
         
@@ -711,7 +763,7 @@ class GrubbyTable extends GrubbyQuery {
      * @return the number of rows affected
      */
     private function deleteImpl($query) {
-        if ((!is_scalar($query['delete']) || is_bool($query['delete'])) && !$query['all']) {
+        if ((!is_scalar($query['delete']) || is_bool($query['delete'])) && empty($query['all'])) {
             throw new GrubbyException('Bulk deletes must be accompanied by an all() qualifier.');
         }
         
@@ -760,7 +812,7 @@ class GrubbyTable extends GrubbyQuery {
             
             $this->field_index[$name] = array('name'=>$name, 'type'=>$type);
             
-            if ($field['auto']) {
+            if (!empty($field['auto'])) {
                 $this->auto_index[$name] = $field['auto'];
             }
         }
@@ -798,7 +850,7 @@ class GrubbyTable extends GrubbyQuery {
     private function buildWhereClause(&$query) {
         $filters = isset($query['filters']) ? $query['filters'] : array();
         
-        $pk = $this->info['primary_key'];
+        $pk = @$this->info['primary_key'];
         $pk_anchor = array_fill_keys(is_array($pk) ? $pk : array($pk), false);
         
         $where = array();
@@ -888,7 +940,18 @@ class GrubbyTable extends GrubbyQuery {
 /**
  * Create, update and delete returns a result.
  */
-class GrubbyResult {
+abstract class GrubbyResult {
+    /**
+     * True if the query resulted in an error.
+     * @return boolean
+     */
+    public abstract function error();
+    
+    /**
+     * Available when error() is true.
+     * @return string
+     */
+    public abstract function errorMessage();
 }
 
 /**
@@ -938,6 +1001,18 @@ abstract class GrubbyRecordset {
      * Returns the values of a single column as an ordered array.
      */
     public abstract function fetchColumn($column);
+    
+    /**
+     * True if the query resulted in an error.
+     * @return boolean
+     */
+    public abstract function error();
+    
+    /**
+     * Available when error() is true.
+     * @return string
+     */
+    public abstract function errorMessage();
 }
 
 /**
