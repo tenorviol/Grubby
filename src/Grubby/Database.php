@@ -15,15 +15,22 @@ define('GRUBBY_AUTO_UPDATE_REMOTE_ADDR', 4);
  */
 abstract class Grubby_Database {
     
+	public $time = 0;
+	public $logger = null;
+	
+	public function log($message, $level) {
+		if (isset($this->logger)) {
+			$this->logger->log($message, $level);
+		}
+	}
+	
     /**
      * Run a SQL statement that manipulates data against this database.
      * I.e. CREATE, UPDATE, DELETE
      * @retun GrubbyResult
      */
     public function execute($sql) {
-        if (Grubby::$debug) {
-            Grubby::debugMessage('Executing: '.$sql);
-        }
+        $this->log('Executing: '.$sql, LOG_DEBUG);
         
         $start = microtime(true);
         
@@ -31,14 +38,11 @@ abstract class Grubby_Database {
         
         $time = microtime(true) - $start;
         $this->time += $time;
-        Grubby::$time += $time;
         
-        if (Grubby::$debug) {
-            if ($result->error()) {
-                Grubby::debugMessage('Error: '.$result->errorMessage());
-            }
-            Grubby::debugMessage('Time: '.number_format($time, 4)." secs");
+        if ($result->error()) {
+            $this->log('Error: '.$result->errorMessage(), LOG_ERR);
         }
+        $this->log('Time: '.number_format($time, 4)." secs", LOG_DEBUG);
         
         if ($result->error()) {
             throw new Grubby_Exception($result->errorMessage());
@@ -53,9 +57,7 @@ abstract class Grubby_Database {
      * @return GrubbyRecordset
      */
     public function query($sql) {
-        if (Grubby::$debug) {
-            Grubby::debugMessage('Querying: '.$sql);
-        }
+        $this->log('Querying: '.$sql, LOG_DEBUG);
         
         $start = microtime(true);
         
@@ -63,14 +65,11 @@ abstract class Grubby_Database {
         
         $time = microtime(true) - $start;
         $this->time += $time;
-        Grubby::$time += $time;
         
-        if (Grubby::$debug) {
-            if ($result->error()) {
-                Grubby::debugMessage('Error: '.$result->errorMessage());
-            }
-            Grubby::debugMessage('Time: '.number_format($time, 4)." secs");
+        if ($result->error()) {
+            $this->log('Error: '.$result->errorMessage(), LOG_ERR);
         }
+        $this->log('Time: '.number_format($time, 4)." secs", LOG_DEBUG);
         
         if ($result->error()) {
             throw new Grubby_Exception($result->errorMessage());

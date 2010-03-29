@@ -8,8 +8,6 @@ class Grubby_DB_Database extends Grubby_Database {
     private $options;
     private $connection = null;
     
-    public $time;
-    
     /**
      * Creates a new Grubby database.
      */

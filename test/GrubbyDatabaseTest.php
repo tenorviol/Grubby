@@ -58,7 +58,6 @@ class GrubbyDatabaseTest extends PHPUnit_Framework_TestCase {
     public function testExecute() {
         $database = $GLOBALS['database'];
         
-        $grubby_before = Grubby::$time;
         $database_before = $database->time;
         $start = microtime(true);
         
@@ -81,13 +80,9 @@ class GrubbyDatabaseTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($data, $read);
         
         $time = microtime(true) - $start;
-        $grubby_time = Grubby::$time - $grubby_before;
         $database_time = $database->time - $database_before;
         
         $this->assertGreaterThan(0, $time);  // some database time should have been spent
-        $this->assertEquals($grubby_time, $database_time);  // one database, equal times
-        $this->assertLessThanOrEqual($time, $grubby_time);  // more total time than database time
-        $this->assertGreaterThan($time*.5, $grubby_time);  // majority of time spent in database
     }
     
     /**

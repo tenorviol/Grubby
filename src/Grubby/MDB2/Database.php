@@ -7,8 +7,6 @@ class Grubby_MDB2_Database extends Grubby_Database {
     private $dsn;
     private $options;
     
-    public $time;
-    
     /**
      * Creates a new Grubby database.
      */
