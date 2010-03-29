@@ -10,8 +10,7 @@
  * Licensed under the MIT license (see LICENSE file).
  */
 
-// TODO: rename to Grubby_Record (evoking ActiveRecord)
-abstract class Grubby_DataObject {
+abstract class Grubby_Record {
     
     /**
      * Return the GrubbyQuery object used for retrieval and storage of this object.
@@ -46,7 +45,7 @@ abstract class Grubby_DataObject {
         
         // something strange happened, throw an exception
         if (!$result->affected_rows == 1) {
-            throw new GrubbyException('Attempted to update and insert the object, but the database returned 0 affected rows.');
+            throw new Grubby_Exception('Attempted to update and insert the object, but the database returned 0 affected rows.');
         }
     }
     

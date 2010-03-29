@@ -701,15 +701,15 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         }
     }
     
-    public function testGrubby_DataObject() {
+    public function testGrubby_Record() {
         $object_schema = $this->test_schema;
-        $object_schema['class'] = 'TestDataObject';
+        $object_schema['class'] = 'TestRecord';
         $table = new Grubby_Table($object_schema);
-        TestDataObject::$grubby_query = $table;
+        TestRecord::$grubby_query = $table;
         
         // read an object;
         $object = $table->read($this->initial_data[0]['id']);
-        $this->assertType('TestDataObject', $object);
+        $this->assertType('TestRecord', $object);
         
         // compare it to the original row
         foreach ($this->initial_data[0] as $key => $value) {
@@ -862,7 +862,7 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     }
 }
 
-class TestDataObject extends Grubby_DataObject {
+class TestRecord extends Grubby_Record {
     
     public static $grubby_query;  // to be set by the test
     public function grubbyQuery() {
