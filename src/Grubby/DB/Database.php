@@ -52,11 +52,6 @@ class Grubby_DB_Database extends Grubby_Database {
         return new Grubby_DB_Recordset($this, $result);
     }
     
-    public function lastInsertID() {
-        $result = $this->query('SELECT LAST_INSERT_ID() AS last_id')->fetch();
-        return $result['last_id'];
-    }
-    
     public function formatString($s) {
         if (is_null($s)) {
             return 'NULL';
