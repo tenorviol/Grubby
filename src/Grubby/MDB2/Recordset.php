@@ -26,7 +26,7 @@ class Grubby_MDB2_Recordset extends Grubby_Recordset {
         if ($row) {
             return $this->unmarshal($row);
         } else {
-            return $row;
+            return null;
         }
     }
     
