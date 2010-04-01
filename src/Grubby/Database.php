@@ -81,7 +81,10 @@ abstract class Grubby_Database {
     /**
      * @return mixed
      */
-    public abstract function lastInsertID();
+    public function lastInsertID() {
+        $result = $this->query('SELECT LAST_INSERT_ID() AS last_id')->fetch();
+        return $result['last_id'];
+    }
     
     /**
      * 
