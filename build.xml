@@ -39,7 +39,7 @@
         
         <tar destfile="${build.file}" compression="gzip">
             <fileset dir="./build">
-                <include name="*" />
+                <include name="**" />
             </fileset>
         </tar>
         
