@@ -20,7 +20,8 @@ abstract class Grubby_Database {
 	
 	public function log($message, $level) {
 		if (isset($this->logger)) {
-			$this->logger->log($message, $level);
+			echo "$message\n";
+//			$this->logger->log($message, $level);
 		}
 	}
 	
@@ -31,7 +32,6 @@ abstract class Grubby_Database {
      */
     public function execute($sql) {
         $this->log('Executing: '.$sql, LOG_DEBUG);
-        
         $start = microtime(true);
         
         $result = $this->executeImpl($sql);

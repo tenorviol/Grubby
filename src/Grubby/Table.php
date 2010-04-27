@@ -79,7 +79,6 @@ class Grubby_Table extends Grubby_Query {
      * TODO: Undo the code triplication in this function.
      */
     private function createImpl($query) {
-        //print_r($query);
         $data = $query['create'];
         $fields = array();
         $values = array();
@@ -167,15 +166,21 @@ class Grubby_Table extends Grubby_Query {
         $sql = 'SELECT '.$fields.' FROM '.$this->info['name'].$join.$where.$group.$order.$limit;
         $result = $this->info['database']->query($sql);
         if (!empty($this->info['class'])) {
-//	        $result->setObjectType($this->info['class']);
-			$class = $this->info['class'];
-			$result->setRecordFactory(function ($row) use ($class) {
-				$object = new $class();
-				foreach ($row as $key => $value) {
-					$object->$key = $value;
-				}
-				return $object;
-			});
+			$class = new ReflectionClass($this->info['class']);
+			if ($this->info['class'] == 'Grubby_Record' || $class->isSubclassOf('Grubby_Record')) {
+				$query = $this;
+				$result->setRecordFactory(function ($row) use ($class, $query) {
+					return $class->newInstance($query, $row);
+				});
+			} else {
+				$result->setRecordFactory(function ($row) use ($class) {
+					$object = $class->newInstance();
+					foreach ($row as $key => $value) {
+						$object->$key = $value;
+					}
+					return $object;
+				});
+			}
         }
 	    if ($first) {
             return $result->fetch();  // Return the first result of the iterator
@@ -190,8 +195,7 @@ class Grubby_Table extends Grubby_Query {
      * @return the number of rows affected
      */
     private function updateImpl($query) {
-        //print_r($query);
-        $data = $query['update'];
+    	$data = $query['update'];
         if (is_object($data)) {
             $data = get_object_vars($data);
         }

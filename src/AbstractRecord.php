@@ -144,7 +144,7 @@ abstract class AbstractRecord implements IteratorAggregate {
 	 * @return Iterator
 	 */
 	public function getIterator() {
-		$fields = array_fields($this->data);
+		$fields = array_keys($this->data);
 		return new AbstractRecord_Iterator($this, $fields);
 	}
 	
@@ -159,7 +159,7 @@ abstract class AbstractRecord implements IteratorAggregate {
 	}
 }
 
-class AbstractRecord_Iterator {
+class AbstractRecord_Iterator implements Iterator {
 	private $record;
 	private $fields;
 	private $field_count;
@@ -176,7 +176,7 @@ class AbstractRecord_Iterator {
 	 */
 	public function current() {
 		$field = $this->fields[$this->marker];
-		return $this->record[$field];
+		return $this->record->$field;
 	}
 	
 	/**

@@ -16,54 +16,73 @@
  * TODO: integrate bug fixes in "my" project
  */
 
-abstract class Grubby_Record {
-    
-    /**
-     * Return the GrubbyQuery object used for retrieval and storage of this object.
-     * @return GrubbyQuery
-     */
-    public abstract function grubbyQuery();
-    
-    /**
-     * Creates or updates this object using the grubbyQuery().
-     * @throws GrubbyException if a create/update error occurs
-     */
-    public function save() {
-        $query = $this->grubbyQuery();
-        $pk = $query->primaryKey();
-        
-        // if there is a primary key, try updating
-        $insert = true;
-        if (isset($this->$pk) && $this->$pk) {
-            $result = $query->update($this);
-            if ($result->affected_rows == 1) {
-                $insert = false;
-            }
-        }
-        
-        // if updating didn't work out, try inserting
-        if ($insert) {
-            $result = $query->create($this);
-            if (empty($this->$pk)) {
-                $this->$pk = $result->insert_id;
-            }
-        }
-        
-        // something strange happened, throw an exception
-        if (!$result->affected_rows == 1) {
-            throw new Grubby_Exception('Attempted to update and insert the object, but the database returned 0 affected rows.');
-        }
-    }
-    
-    /**
-     * Removes the row in the grubbyQuery() corresponding to this object's primary key value.
-     * @return boolean removed one row vs. nothing removed
-     * @throws GrubbyException if a delete error occurs
-     */
-    public function delete() {
-        $query = $this->grubbyQuery();
-        $pk = $query->primaryKey();
-        $result = $query->delete($this->$pk);
-        return ($result->affected_rows == 1);
-    }
+class Grubby_Record extends AbstractRecord {
+	
+	private $query;
+	
+	public function __construct($query, $data = array()) {
+		$this->query = $query;
+		if (is_scalar($data)) {
+			$pk = $this->query->primaryKey();
+			$data = array($pk => $data);
+		}
+		$this->setData($data);
+	}
+	
+	public function id() {
+		$pk = $this->query->primaryKey();
+		return isset($this->$pk) ? $this->$pk : null;
+	}
+	
+	protected function readData($require_fields = null, array $exclude_fields = null) {
+		return $this->query->read($this->id());
+	}
+	
+	/**
+	 * Creates or updates this object using the grubbyQuery().
+	 * @throws GrubbyException if a create/update error occurs
+	 */
+	protected function writeData(array $dirty_fields) {
+		$data = array_intersect_key($this->toArray(), $dirty_fields);
+		foreach ($dirty_fields as $field => $dirty) {
+			if (!isset($data[$field])) {
+				$data[$field] = null;
+			}
+		}
+		
+		$pk = $this->query->primaryKey();
+		
+		if (!empty($this->$pk)) {
+			$data[$pk] = $this->$pk;
+			$result = $this->query->update($data);
+			if ($result->affected_rows == 1) {
+				return true;
+			}
+		}
+		
+		// if updating did not do anything, try inserting
+		$result = $this->query->create($data);
+		if (empty($this->$pk)) {
+			$this->$pk = $result->insert_id;
+		}
+		
+		// something strange happened, throw an exception
+		if (!$result->affected_rows == 1) {
+			$this->query->log('Attempted to update and insert the object, but the database returned 0 affected rows.', LOG_ERR);
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Removes the row in the grubbyQuery() corresponding to this object's primary key value.
+	 * @return boolean removed one row vs. nothing removed
+	 * @throws GrubbyException if a delete error occurs
+	 */
+	public function delete() {
+		$this->id();
+		$result = $this->query->delete($this->id());
+		return $result->affected_rows == 1;
+	}
 }

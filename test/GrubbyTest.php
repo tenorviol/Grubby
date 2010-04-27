@@ -703,13 +703,12 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
     
     public function testGrubby_Record() {
         $object_schema = $this->test_schema;
-        $object_schema['class'] = 'TestRecord';
+        $object_schema['class'] = 'Grubby_Record';
         $table = new Grubby_Table($object_schema);
-        TestRecord::$grubby_query = $table;
         
         // read an object;
         $object = $table->read($this->initial_data[0]['id']);
-        $this->assertType('TestRecord', $object);
+        $this->assertType('Grubby_Record', $object);
         
         // compare it to the original row
         foreach ($this->initial_data[0] as $key => $value) {
@@ -735,6 +734,8 @@ class GrubbyTest extends PHPUnit_Framework_TestCase {
         // read back a non-existant row
         $row = $this->test_table->read($object->id);
         $this->assertNull($row);
+        
+        $this->markTestIncomplete();
         
         // create a new row with an id
         $object->save();

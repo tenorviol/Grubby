@@ -4,17 +4,7 @@
  * Read returns a recordset.
  */
 abstract class Grubby_Recordset {
-    protected $object_type;
     private $factory = null;
-    
-    /**
-     * 
-     * @param $object_type
-     * @return unknown_type
-     */
-    public function setObjectType($object_type) {
-        $this->object_type = $object_type;
-    }
     
     public function setRecordFactory($factory) {
     	$this->factory = $factory;
