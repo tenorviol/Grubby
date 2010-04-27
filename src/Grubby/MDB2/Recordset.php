@@ -36,10 +36,8 @@ class Grubby_MDB2_Recordset extends Grubby_Recordset {
      */
     public function fetchAll() {
         $all = $this->recordset->fetchAll(MDB2_FETCHMODE_ASSOC);
-        if ($this->object_type) {
-            foreach ($all as $key => $row) {
-                $all[$key] = $this->unmarshal($row);
-            }
+        foreach ($all as $key => $row) {
+            $all[$key] = $this->unmarshal($row);
         }
         return $all;
     }

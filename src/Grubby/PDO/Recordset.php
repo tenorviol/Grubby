@@ -32,10 +32,8 @@ class Grubby_PDO_Recordset extends Grubby_Recordset {
      */
     public function fetchAll() {
         $all = $this->recordset->fetchAll(PDO::FETCH_ASSOC);
-        if ($this->object_type) {
-            foreach ($all as $key => $row) {
-                $all[$key] = $this->unmarshal($row);
-            }
+        foreach ($all as $key => $row) {
+            $all[$key] = $this->unmarshal($row);
         }
         return $all;
     }

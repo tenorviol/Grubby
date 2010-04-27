@@ -36,10 +36,8 @@ class Grubby_Mysql_Recordset extends Grubby_Recordset {
         while ($row = mysql_fetch_assoc($this->recordset)) {
             $all[] = $row;
         }
-        if ($this->object_type) {
-            foreach ($all as $key => $row) {
-                $all[$key] = $this->unmarshal($row);
-            }
+        foreach ($all as $key => $row) {
+            $all[$key] = $this->unmarshal($row);
         }
         return $all;
     }

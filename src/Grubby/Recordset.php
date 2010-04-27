@@ -5,6 +5,7 @@
  */
 abstract class Grubby_Recordset {
     protected $object_type;
+    private $factory = null;
     
     /**
      * 
@@ -15,17 +16,19 @@ abstract class Grubby_Recordset {
         $this->object_type = $object_type;
     }
     
+    public function setRecordFactory($factory) {
+    	$this->factory = $factory;
+    }
+    
     /**
      * 
      * @param $result
      * @return unknown_type
      */
     protected function unmarshal($result) {
-        if ($this->object_type) {
-            $object = new $this->object_type;
-            foreach ($result as $key => $value) {
-                $object->$key = $value;
-            }
+        if ($this->factory) {
+        	$factory = $this->factory;
+            $object = $factory($result);
             return $object;
         } else {
             return $result;

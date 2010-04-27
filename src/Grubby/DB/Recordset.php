@@ -40,10 +40,8 @@ class Grubby_DB_Recordset extends Grubby_Recordset {
         while ($row = $this->recordset->fetchRow(DB_FETCHMODE_ASSOC)) {
             $all[] = $row;
         }
-        if ($this->object_type) {
-            foreach ($all as $key => $row) {
-                $all[$key] = $this->unmarshal($row);
-            }
+        foreach ($all as $key => $row) {
+            $all[$key] = $this->unmarshal($row);
         }
         return $all;
     }

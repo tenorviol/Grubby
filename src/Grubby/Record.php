@@ -10,6 +10,12 @@
  * Licensed under the MIT license (see LICENSE file).
  */
 
+/**
+ * TODO: 4 spaces to tabs
+ * TODO: change set object to a factory
+ * TODO: integrate bug fixes in "my" project
+ */
+
 abstract class Grubby_Record {
     
     /**
